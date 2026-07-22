@@ -87,12 +87,58 @@ def _titles_match(item1: CanonicalMediaItem, item2: CanonicalMediaItem) -> bool:
     return False
 
 
+_otaku_mapper_instance: Optional[Any] = None
+
+
+def _get_otaku_mapper() -> Optional[Any]:
+    global _otaku_mapper_instance
+    if _otaku_mapper_instance is None:
+        try:
+            from otaku_mapper import OtakuMapper
+            _otaku_mapper_instance = OtakuMapper()
+        except Exception:
+            _otaku_mapper_instance = False
+    return _otaku_mapper_instance if _otaku_mapper_instance is not False else None
+
+
 def _titles_conflict(item1: CanonicalMediaItem, item2: CanonicalMediaItem) -> bool:
     t1 = normalize_title(item1.title)
     t2 = normalize_title(item2.title)
-    if t1 and t2 and t1 != t2:
-        return True
-    return False
+    if not t1 or not t2:
+        return False
+    if t1 == t2:
+        return False
+
+    # Check original title cross-match
+    t1_orig = normalize_title(item1.title_original)
+    t2_orig = normalize_title(item2.title_original)
+    if t1_orig and (t1_orig == t2 or t1_orig == t1 or (t2_orig and t1_orig == t2_orig)):
+        return False
+    if t2_orig and (t2_orig == t1 or t2_orig == t2):
+        return False
+
+    # Check substring inclusion for subtitle extensions (e.g. Movie vs Series suffix)
+    if len(t1) > 5 and len(t2) > 5 and (t1 in t2 or t2 in t1):
+        return False
+
+    # Check Otaku Mappings cross-reference
+    otaku = _get_otaku_mapper()
+    if otaku:
+        entry1 = otaku.lookup(item1.ids, item1.title)
+        entry2 = otaku.lookup(item2.ids, item2.title)
+        if entry1 and entry2 and entry1 == entry2:
+            return False
+        if entry1:
+            planet1 = normalize_title(entry1.get("anime-planet_id", "").replace("-", " "))
+            if planet1 and (planet1 == t2 or planet1 == t1):
+                return False
+        if entry2:
+            planet2 = normalize_title(entry2.get("anime-planet_id", "").replace("-", " "))
+            if planet2 and (planet2 == t1 or planet2 == t2):
+                return False
+
+    return True
+
 
 
 def merge_items(

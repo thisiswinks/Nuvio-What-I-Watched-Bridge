@@ -160,7 +160,24 @@ class TestDeduplicator(unittest.TestCase):
         result_missing = deduplicate_items([item3, item4])
         self.assertEqual(len(result_missing.confirmed), 1)
 
+    def test_single_id_with_otaku_title_crossref_automerges(self):
+        item_mal = CanonicalMediaItem(
+            uuid="u1",
+            media_type=MediaType.ANIME,
+            title="Boushoku no Berserk",
+            ids=CanonicalIDs(mal=53439, tvdb="426530")
+        )
+        item_trakt = CanonicalMediaItem(
+            uuid="u2",
+            media_type=MediaType.ANIME,
+            title="Berserk of Gluttony",
+            ids=CanonicalIDs(tvdb="426530", tmdb="213331")
+        )
+        result = deduplicate_items([item_mal, item_trakt])
+        self.assertEqual(len(result.confirmed), 1)
+        self.assertEqual(len(result.flagged), 0)
 
 
 if __name__ == "__main__":
     unittest.main()
+
