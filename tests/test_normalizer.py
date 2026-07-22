@@ -209,6 +209,36 @@ class TestNormalizer(unittest.TestCase):
         self.assertIn("Show 1", titles)
         self.assertIn("Nuvio List 1", titles)
 
+    def test_normalize_all_sources_pregroups_trakt_episodes(self):
+        trakt_ep1 = {
+            "_source_file": "watched-shows-1.json",
+            "show": {
+                "ids": {"imdb": "tt9679542", "tmdb": 86031},
+                "title": "Dr. Stone",
+                "year": 2019,
+            },
+            "episode": {"season": 1, "number": 1, "title": "Stone World"},
+            "watched_at": "2023-04-20T10:00:00.000Z",
+        }
+        trakt_ep2 = {
+            "_source_file": "watched-shows-1.json",
+            "show": {
+                "ids": {"imdb": "tt9679542", "tmdb": 86031},
+                "title": "Dr. Stone",
+                "year": 2019,
+            },
+            "episode": {"season": 1, "number": 2, "title": "King of the Stone World"},
+            "watched_at": "2023-04-21T10:00:00.000Z",
+        }
+        extracted = {"trakt": [trakt_ep1, trakt_ep2]}
+        normalized = normalize_all_sources(extracted)
+
+        dr_stone_items = [item for item in normalized if item.title == "Dr. Stone"]
+        self.assertEqual(len(dr_stone_items), 1)
+        self.assertEqual(len(dr_stone_items[0].episodes), 2)
+        self.assertEqual(dr_stone_items[0].sources["trakt"].watch_count, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
+

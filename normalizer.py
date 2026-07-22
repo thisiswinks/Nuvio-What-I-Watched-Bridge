@@ -1,4 +1,5 @@
 import uuid
+from collections import defaultdict
 from typing import Dict, Any, List, Optional, Union
 from models import (
     CanonicalMediaItem,
@@ -355,10 +356,103 @@ def normalize_all_sources(
     extracted: Dict[str, List[Dict[str, Any]]]
 ) -> List[CanonicalMediaItem]:
     from otaku_mapper import OtakuMapper
+
     mapper = OtakuMapper()
     normalized_items: List[CanonicalMediaItem] = []
 
-    for source_key, items in extracted.items():
+    # Identify Trakt source keys vs non-Trakt keys
+    trakt_keys = [k for k in extracted.keys() if "trakt" in k.lower()]
+    non_trakt_keys = [k for k in extracted.keys() if "trakt" not in k.lower()]
+
+    # 1. Pre-group Trakt show scrobbles by parent show ID
+    trakt_raw_list: List[Dict[str, Any]] = []
+    for k in trakt_keys:
+        items = extracted.get(k)
+        if not items:
+            continue
+        if isinstance(items, dict):
+            for sub_key, sub_items in items.items():
+                if isinstance(sub_items, list):
+                    for sub_item in sub_items:
+                        if isinstance(sub_item, dict):
+                            if "media_type" not in sub_item:
+                                sub_item["media_type"] = sub_key
+                            trakt_raw_list.append(sub_item)
+        elif isinstance(items, list):
+            trakt_raw_list.extend([i for i in items if isinstance(i, dict)])
+
+    trakt_show_groups: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    trakt_other: List[Dict[str, Any]] = []
+
+    for raw in trakt_raw_list:
+        show_obj = raw.get("show") if isinstance(raw.get("show"), dict) else None
+        s_ids = (
+            show_obj.get("ids")
+            if (show_obj and isinstance(show_obj.get("ids"), dict))
+            else None
+        )
+
+        key = None
+        if s_ids:
+            if s_ids.get("imdb"):
+                key = f"imdb:{s_ids['imdb']}"
+            elif s_ids.get("tmdb"):
+                key = f"tmdb:{s_ids['tmdb']}"
+            elif s_ids.get("tvdb"):
+                key = f"tvdb:{s_ids['tvdb']}"
+            elif s_ids.get("trakt"):
+                key = f"trakt:{s_ids['trakt']}"
+
+        if key:
+            trakt_show_groups[key].append(raw)
+        else:
+            trakt_other.append(raw)
+
+    for key, group in trakt_show_groups.items():
+        base_item = normalize_trakt_item(group[0])
+        combined_episodes = []
+        for raw_entry in group:
+            ep_obj = (
+                raw_entry.get("episode")
+                if isinstance(raw_entry.get("episode"), dict)
+                else None
+            )
+            if ep_obj:
+                combined_episodes.append({
+                    "season": ep_obj.get("season", 1),
+                    "episode": ep_obj.get("number") or ep_obj.get("episode") or 1,
+                    "watched_at": raw_entry.get("watched_at")
+                    or raw_entry.get("last_watched_at"),
+                    "title": ep_obj.get("title"),
+                })
+        base_item.episodes = combined_episodes
+        if "trakt" in base_item.sources:
+            base_item.sources["trakt"].watch_count = len(group)
+            watched_times = [
+                r.get("watched_at") or r.get("last_watched_at")
+                for r in group
+                if (r.get("watched_at") or r.get("last_watched_at"))
+            ]
+            if watched_times:
+                base_item.sources["trakt"].last_watched_at = max(watched_times)
+
+        enriched_ids, is_anime = mapper.enrich_item_ids(base_item.ids, base_item.title)
+        base_item.ids = enriched_ids
+        if is_anime:
+            base_item.media_type = MediaType.ANIME
+        normalized_items.append(base_item)
+
+    for raw in trakt_other:
+        item = normalize_trakt_item(raw)
+        enriched_ids, is_anime = mapper.enrich_item_ids(item.ids, item.title)
+        item.ids = enriched_ids
+        if is_anime:
+            item.media_type = MediaType.ANIME
+        normalized_items.append(item)
+
+    # 2. Process non-Trakt sources
+    for source_key in non_trakt_keys:
+        items = extracted.get(source_key)
         if not items:
             continue
 
@@ -379,8 +473,6 @@ def normalize_all_sources(
         for raw_item in item_list:
             if "mal" in source_lower:
                 item = normalize_mal_item(raw_item)
-            elif "trakt" in source_lower:
-                item = normalize_trakt_item(raw_item)
             elif "simkl" in source_lower:
                 item = normalize_simkl_item(raw_item)
             elif "nuvio" in source_lower:
@@ -395,7 +487,6 @@ def normalize_all_sources(
                 else:
                     item = normalize_simkl_item(raw_item)
 
-            # Otaku Mappings Enrichment
             enriched_ids, is_anime = mapper.enrich_item_ids(item.ids, item.title)
             item.ids = enriched_ids
             if is_anime:
@@ -403,6 +494,6 @@ def normalize_all_sources(
 
             normalized_items.append(item)
 
-
     return normalized_items
+
 
