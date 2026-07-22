@@ -5,6 +5,8 @@ let currentTab = 'all';
 let currentPage = 1;
 const pageSize = 24;
 
+const DEFAULT_NUVIO_APIKEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzgxNTIxMzQ2LCJleHAiOjE5MzkyMDEzNDZ9.tmQaj682pwzehpqlgCDMnySOqiUvpgRbrE43T4VJpDI";
+
 document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   setupDragAndDrop();
@@ -35,7 +37,6 @@ async function loadData() {
   updateCounters();
   applyFilters();
 }
-
 
 function updateCounters() {
   const animeCount = allItems.filter(i => i.media_type === 'anime').length;
@@ -116,24 +117,171 @@ function setupEventListeners() {
     nuvioModal.classList.add('hidden');
   });
 
-  // Copy Nuvio JSON to Clipboard
+  // Copy Raw Watched Payload JSON (p_items)
   document.getElementById('btn-copy-nuvio-json').addEventListener('click', async () => {
+    const watchedPayload = generateNuvioWatchedPayload();
+    const jsonStr = JSON.stringify(watchedPayload, null, 2);
     try {
-      const res = await fetch('data/export/nuvio_custom_collection.json');
-      const text = await res.text();
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(jsonStr);
       const btn = document.getElementById('btn-copy-nuvio-json');
       const origText = btn.innerHTML;
-      btn.innerHTML = '✅ Copied to Clipboard!';
+      btn.innerHTML = '✅ Copied p_items JSON to Clipboard!';
       btn.style.background = '#059669';
       setTimeout(() => {
         btn.innerHTML = origText;
         btn.style.background = '';
       }, 2500);
     } catch (e) {
-      alert('Copied! File is also available at data/export/nuvio_custom_collection.json');
+      alert('Copied! p_items JSON generated with ' + watchedPayload.p_items.length + ' items.');
     }
   });
+
+  // Direct Sync Watched Items to Nuvio API
+  document.getElementById('btn-run-nuvio-sync').addEventListener('click', async () => {
+    await runNuvioDirectSync();
+  });
+}
+
+function parseNuvioAuth(inputStr) {
+  let bearerToken = "";
+  let apiKey = DEFAULT_NUVIO_APIKEY;
+
+  if (!inputStr) return { bearerToken: "", apiKey };
+
+  // Parse cURL header lines if user pasted full cURL
+  const authMatch = inputStr.match(/authorization:\s*Bearer\s+([A-Za-z0-9._\-\+]+)/i) || inputStr.match(/Bearer\s+([A-Za-z0-9._\-\+]+)/i);
+  if (authMatch) {
+    bearerToken = authMatch[1];
+  } else if (inputStr.trim().startsWith("eyJ")) {
+    bearerToken = inputStr.trim();
+  }
+
+  const apiMatch = inputStr.match(/apikey:\s*([A-Za-z0-9._\-\+]+)/i);
+  if (apiMatch) {
+    apiKey = apiMatch[1];
+  }
+
+  return { bearerToken, apiKey };
+}
+
+function generateNuvioWatchedPayload() {
+  const pItems = [];
+  const profileId = parseInt(document.getElementById('nuvio-profile-id').value) || 1;
+
+  allItems.forEach(item => {
+    const ids = item.ids || {};
+    const contentId = ids.imdb || ids.tmdb || ids.tvdb || ids.trakt || item.title;
+    const isSeries = item.media_type === 'show' || item.media_type === 'anime';
+    const contentType = isSeries ? 'series' : 'movie';
+    const nowMs = Date.now();
+
+    if (contentType === 'series') {
+      if (item.episodes && item.episodes.length > 0) {
+        item.episodes.forEach(ep => {
+          pItems.push({
+            content_id: String(contentId),
+            content_type: 'series',
+            title: item.title,
+            season: ep.season || 1,
+            episode: ep.episode || 1,
+            watched_at: ep.watched_at ? new Date(ep.watched_at).getTime() : nowMs
+          });
+        });
+      } else {
+        pItems.push({
+          content_id: String(contentId),
+          content_type: 'series',
+          title: item.title,
+          season: 1,
+          episode: 1,
+          watched_at: nowMs
+        });
+      }
+    } else {
+      pItems.push({
+        content_id: String(contentId),
+        content_type: 'movie',
+        title: item.title,
+        season: null,
+        episode: null,
+        watched_at: nowMs
+      });
+    }
+  });
+
+  return {
+    p_items: pItems,
+    p_profile_id: profileId
+  };
+}
+
+async function runNuvioDirectSync() {
+  const tokenInput = document.getElementById('nuvio-token-input').value.trim();
+  const { bearerToken, apiKey } = parseNuvioAuth(tokenInput);
+
+  if (!bearerToken) {
+    alert("Please paste your Nuvio Authorization Token (eyJ...) or cURL command from your Nuvio session into Step 1.");
+    return;
+  }
+
+  const payload = generateNuvioWatchedPayload();
+  const totalItems = payload.p_items.length;
+  const profileId = payload.p_profile_id;
+  const batchSize = 100;
+  const totalBatches = Math.ceil(totalItems / batchSize);
+
+  const progressContainer = document.getElementById('nuvio-sync-progress');
+  const progressBarFill = document.getElementById('progress-bar-fill');
+  const syncStatusText = document.getElementById('sync-status-text');
+
+  progressContainer.classList.remove('hidden');
+  syncStatusText.style.color = "#10b981";
+
+  const btnSync = document.getElementById('btn-run-nuvio-sync');
+  btnSync.disabled = true;
+
+  try {
+    for (let b = 0; b < totalBatches; b++) {
+      const start = b * batchSize;
+      const batchItems = payload.p_items.slice(start, start + batchSize);
+      const percent = Math.round(((b + 1) / totalBatches) * 100);
+
+      syncStatusText.textContent = `Syncing items ${start + 1} to ${Math.min(start + batchSize, totalItems)} of ${totalItems} (${percent}%)...`;
+      progressBarFill.style.width = `${percent}%`;
+
+      const response = await fetch('https://api.nuvio.tv/rest/v1/rpc/sync_push_watched_items', {
+        method: 'POST',
+        headers: {
+          'accept': '*/*',
+          'apikey': apiKey,
+          'authorization': `Bearer ${bearerToken}`,
+          'content-type': 'application/json',
+          'x-client-info': 'NuvioWebsite/1.4.23'
+        },
+        body: JSON.stringify({
+          p_items: batchItems,
+          p_profile_id: profileId
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Nuvio API HTTP ${response.status}: ${errText}`);
+      }
+
+      // Short delay between batches
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    syncStatusText.textContent = `🎉 Success! Imported all ${totalItems} watched items directly to Nuvio!`;
+    progressBarFill.style.width = "100%";
+  } catch (err) {
+    console.error("Nuvio API Sync Error:", err);
+    syncStatusText.style.color = "#f43f5e";
+    syncStatusText.textContent = `Sync Error: ${err.message}`;
+  } finally {
+    btnSync.disabled = false;
+  }
 }
 
 function setupDragAndDrop() {
@@ -176,7 +324,7 @@ async function handleUploadedFiles(files) {
         const zip = await JSZip.loadAsync(file);
         let count = 0;
         zip.forEach(() => count++);
-        dropText.textContent = `Extracted ${count} files from ${file.name}! Run 'python3 main.py' or view items below.`;
+        dropText.textContent = `Extracted ${count} files from ${file.name}! Ready to sync to Nuvio API below.`;
       } catch (e) {
         dropText.textContent = `Uploaded ${file.name}.`;
       }

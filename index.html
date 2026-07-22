@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Media List Sync & Nuvio One-Click Import Hub</title>
-  <meta name="description" content="Unified media tracking dashboard and 1-click Nuvio importer for Trakt, Simkl, MyAnimeList, and Nuvio.">
+  <title>Media List Sync & Nuvio Watched API Importer</title>
+  <meta name="description" content="Unified media tracking dashboard and direct Nuvio watched history API importer for Trakt, Simkl, MyAnimeList, and Nuvio.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -30,7 +30,7 @@
       <div class="header-actions">
         <button id="btn-quick-nuvio" class="btn btn-emerald">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-          ⚡ 1-Click Nuvio Importer
+          ⚡ Sync Watched to Nuvio API
         </button>
         <button id="btn-export-all" class="btn btn-primary">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -47,7 +47,7 @@
         <div class="drop-icon">📦</div>
         <div class="drop-text">
           <h3>Drop your Trakt ZIP export or MAL XML file here</h3>
-          <p>Or click to select files — instantly generates your deduplicated Nuvio, Simkl, and Trakt sync files</p>
+          <p>Or click to select files — instantly generates your deduplicated Nuvio, Simkl, and Trakt sync payloads</p>
         </div>
         <input type="file" id="file-input" accept=".zip,.json,.xml,.gz" class="file-input-hidden">
       </div>
@@ -58,28 +58,28 @@
       <div class="stat-card glass-card">
         <div class="stat-icon icon-purple">📊</div>
         <div class="stat-info">
-          <span class="stat-value" id="stat-total">962</span>
+          <span class="stat-value" id="stat-total">971</span>
           <span class="stat-label">Total Unique Items</span>
         </div>
       </div>
       <div class="stat-card glass-card">
         <div class="stat-icon icon-blue">🍿</div>
         <div class="stat-info">
-          <span class="stat-value" id="stat-movies">479</span>
+          <span class="stat-value" id="stat-movies">468</span>
           <span class="stat-label">Movies</span>
         </div>
       </div>
       <div class="stat-card glass-card">
         <div class="stat-icon icon-teal">📺</div>
         <div class="stat-info">
-          <span class="stat-value" id="stat-shows">350</span>
+          <span class="stat-value" id="stat-shows">221</span>
           <span class="stat-label">TV Shows</span>
         </div>
       </div>
       <div class="stat-card glass-card">
         <div class="stat-icon icon-pink">🌸</div>
         <div class="stat-info">
-          <span class="stat-value" id="stat-anime">133</span>
+          <span class="stat-value" id="stat-anime">282</span>
           <span class="stat-label">Anime (Otaku Mapped)</span>
         </div>
       </div>
@@ -88,11 +88,11 @@
     <!-- Navigation Tabs & Toolbar -->
     <section class="control-panel glass-card">
       <div class="tab-buttons">
-        <button class="tab-btn active" data-tab="all">All Items (<span id="count-all">962</span>)</button>
-        <button class="tab-btn" data-tab="anime">🌸 Anime (<span id="count-anime">133</span>)</button>
-        <button class="tab-btn" data-tab="movies">🍿 Movies (<span id="count-movies">479</span>)</button>
-        <button class="tab-btn" data-tab="shows">📺 TV Shows (<span id="count-shows">350</span>)</button>
-        <button class="tab-btn tab-warning" data-tab="flagged">⚠️ Reconciliation Flagged (<span id="count-flagged">720</span>)</button>
+        <button class="tab-btn active" data-tab="all">All Items (<span id="count-all">971</span>)</button>
+        <button class="tab-btn" data-tab="anime">🌸 Anime (<span id="count-anime">282</span>)</button>
+        <button class="tab-btn" data-tab="movies">🍿 Movies (<span id="count-movies">468</span>)</button>
+        <button class="tab-btn" data-tab="shows">📺 TV Shows (<span id="count-shows">221</span>)</button>
+        <button class="tab-btn tab-warning" data-tab="flagged">⚠️ Reconciliation Flagged (<span id="count-flagged">4129</span>)</button>
       </div>
 
       <div class="filter-toolbar">
@@ -131,33 +131,51 @@
     </section>
   </main>
 
-  <!-- Modal for 1-Click Nuvio Importer -->
+  <!-- Modal for 1-Click Direct Nuvio Watched API Importer -->
   <div id="nuvio-modal" class="modal-overlay hidden">
-    <div class="modal-content glass-card">
+    <div class="modal-content glass-card" style="max-width: 600px;">
       <div class="modal-header">
-        <h3>⚡ 1-Click Nuvio Collection Importer</h3>
+        <h3>⚡ Direct Nuvio Watched API Importer</h3>
         <button id="nuvio-modal-close" class="close-btn">&times;</button>
       </div>
       <div class="modal-body">
-        <p>Your media collection is deduplicated and ready for Nuvio!</p>
-        <div class="nuvio-guide-box">
-          <div class="step-badge">Step 1</div>
-          <p>Click below to copy your complete Nuvio Custom Collection JSON payload:</p>
-          <button id="btn-copy-nuvio-json" class="btn btn-emerald btn-block">
-            📋 Copy Nuvio Collection JSON to Clipboard
-          </button>
+        <p>Sync your deduplicated library directly to your Nuvio account's <strong>Watched History</strong> via API!</p>
+        
+        <div class="nuvio-guide-box" style="margin-top: 1rem;">
+          <div class="step-badge">Step 1: Nuvio Token / cURL</div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+            Paste your <code>Bearer eyJ...</code> token or your DevTools <code>curl</code> request from Nuvio:
+          </p>
+          <textarea id="nuvio-token-input" rows="4" class="token-textarea" placeholder="Paste your Bearer token (eyJ...) or full curl command from Nuvio network tab here..."></textarea>
         </div>
 
         <div class="nuvio-guide-box" style="margin-top: 1rem;">
-          <div class="step-badge">Step 2</div>
-          <p>Open <strong>Nuvio</strong> &rarr; <strong>Settings</strong> &rarr; <strong>Custom Collections</strong> &rarr; <strong>Import JSON</strong> and paste!</p>
-          <a href="https://nuvio.app" target="_blank" rel="noopener" class="btn btn-secondary btn-block" style="text-align: center; text-decoration: none; margin-top: 0.5rem;">
-            Launch Nuvio Web App ↗
-          </a>
+          <div class="step-badge">Step 2: Profile ID</div>
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
+            <label style="font-size: 0.85rem; font-weight: 600;">Profile ID:</label>
+            <input type="number" id="nuvio-profile-id" value="1" min="1" class="select-input" style="width: 80px;">
+          </div>
         </div>
 
-        <div style="margin-top: 1.5rem; text-align: center;">
-          <a href="data/export/nuvio_custom_collection.json" download class="link-download">Or Download nuvio_custom_collection.json directly</a>
+        <!-- Sync Progress Bar -->
+        <div id="nuvio-sync-progress" class="sync-progress-container hidden" style="margin-top: 1rem;">
+          <div class="progress-bar-bg">
+            <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+          <p id="sync-status-text" style="font-size: 0.85rem; text-align: center; margin-top: 0.5rem; color: #10b981;">Ready to sync...</p>
+        </div>
+
+        <div style="margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+          <button id="btn-run-nuvio-sync" class="btn btn-emerald btn-block">
+            🚀 Direct Sync Watched Items to Nuvio API
+          </button>
+          <button id="btn-copy-nuvio-json" class="btn btn-secondary btn-block">
+            📋 Copy Raw Watched Payload JSON (p_items)
+          </button>
+        </div>
+
+        <div style="margin-top: 1rem; text-align: center;">
+          <a href="data/export/nuvio_watched_sync.json" download class="link-download">Download nuvio_watched_sync.json file</a>
         </div>
       </div>
     </div>
@@ -173,6 +191,13 @@
       <div class="modal-body">
         <p>Easily feed your collated library back to each target service:</p>
         <div class="export-list">
+          <a href="data/export/nuvio_watched_sync.json" download class="export-item">
+            <div class="export-icon nuvio-bg">N</div>
+            <div>
+              <strong>Nuvio Watched History Payload</strong>
+              <small>nuvio_watched_sync.json (rpc/sync_push_watched_items)</small>
+            </div>
+          </a>
           <a href="data/export/nuvio_custom_collection.json" download class="export-item">
             <div class="export-icon nuvio-bg">N</div>
             <div>
@@ -214,5 +239,4 @@
   <script src="data/export/flagged_data.js"></script>
   <script src="app.js"></script>
 </body>
-
 </html>
