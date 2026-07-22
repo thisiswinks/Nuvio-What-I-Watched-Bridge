@@ -1,23 +1,24 @@
 # Media List Extraction, Collation, Deduplication & Export Pipeline Design
 
 **Date**: 2026-07-22  
-**Target Services**: Simkl (API), Trakt (Local JSON export), MyAnimeList (Local XML export)  
-**Output Target**: Master JSON files (`movies.json`, `shows.json`, `anime.json`, `combined_full.json`), Reconciliation Reports, and Service-Native Re-import Payloads (Simkl, Trakt, MAL XML).
+**Target Services**: Simkl (API), Trakt (Local JSON export), MyAnimeList (Local XML export), Nuvio (Local JSON custom collection / sync bridge export)  
+**Output Target**: Master JSON files (`movies.json`, `shows.json`, `anime.json`, `combined_full.json`), Reconciliation Reports, and Service-Native Re-import Payloads (Simkl, Trakt, MAL XML, Nuvio Custom Collection JSON).
 
 ---
 
 ## 1. Overview & Objective
 
-Build a modular, easy-to-read Python pipeline to extract, unify, collate, deduplicate, and export media watch history, ratings, collections, and watchlists across three services:
+Build a modular, easy-to-read Python pipeline to extract, unify, collate, deduplicate, and export media watch history, ratings, collections, and watchlists across four services:
 1. **Simkl**: Fetched via API using OAuth PIN flow and cached locally.
 2. **Trakt**: Read from local JSON export files (`/Users/winks/Downloads/trakt-export-geekwinks`).
 3. **MyAnimeList (MAL)**: Read from local XML export (`/Users/winks/Downloads/animelist_1784747731_-_11369504.xml`).
+4. **Nuvio**: Read from local JSON custom collection export (`/Users/winks/Downloads/nuvio_custom_collection_2026-07-22.json`).
 
 The pipeline must:
-- Preserve all external metadata identifiers (`imdb_id`, `tmdb_id`, `tvdb_id`, `mal_id`, `kitsu_id`, `anidb_id`, `simkl_id`, `trakt_id`).
+- Preserve all external metadata identifiers (`imdb_id`, `tmdb_id`, `tvdb_id`, `mal_id`, `kitsu_id`, `anidb_id`, `simkl_id`, `trakt_id`, `nuvio_id`).
 - Apply strict deduplication (requiring at least TWO matching IDs, or matching Title + Start/End Dates).
 - Flag ambiguous/single-ID/date-mismatched records for manual reconciliation in `reconciliation_flagged.json` and `reconciliation.md`.
-- Generate master combined JSON datasets and service-native import payloads (Simkl JSON, Trakt JSON, MAL XML).
+- Generate master combined JSON datasets and service-native import payloads (Simkl JSON, Trakt JSON, MAL XML, Nuvio Custom Collection JSON).
 - Be modular, Gist-ready, and free of hardcoded sensitive credentials.
 
 ---
@@ -35,7 +36,8 @@ media_sync_pipeline/
 │   ├── base.py               # Abstract base extractor interface & local raw cacher
 │   ├── simkl_api.py          # Simkl API client & raw file fetcher/cacher
 │   ├── trakt_json.py         # Trakt export directory parser
-│   └── mal_xml.py            # MyAnimeList XML file parser
+│   ├── mal_xml.py            # MyAnimeList XML file parser
+│   └── nuvio_json.py         # Nuvio collection/history JSON parser
 ├── normalizer.py             # Maps raw source objects to Canonical Media Items
 ├── deduplicator.py           # Multi-tier ID/Title/Date matching & merger logic
 └── exporters/
@@ -43,7 +45,8 @@ media_sync_pipeline/
     ├── reconciliation.py     # Outputs reconciliation_flagged.json & reconciliation.md
     ├── simkl_exporter.py     # Formats Simkl API sync import payloads
     ├── trakt_exporter.py     # Formats Trakt API sync import payloads
-    └── mal_exporter.py       # Formats MyAnimeList XML import export
+    ├── mal_exporter.py       # Formats MyAnimeList XML import export
+    └── nuvio_exporter.py     # Formats Nuvio custom collection JSON import payload
 ```
 
 ---
@@ -57,9 +60,10 @@ media_sync_pipeline/
    - Downloads/fetches Simkl data via API (`/sync/all-items/`) and caches raw JSON in `data/raw/simkl/`. If raw cached files exist and `--refresh-api` is not set, reads from local disk.
    - Reads local Trakt JSON files from directory.
    - Reads local MAL XML file.
+   - Reads local Nuvio custom collection JSON file.
 3. **Normalization**:
    - Converts raw records to `CanonicalMediaItem` objects.
-   - Preserves all external IDs (`imdb`, `tmdb`, `tvdb`, `mal`, `kitsu`, `anidb`, `simkl`, `trakt`).
+   - Preserves all external IDs (`imdb`, `tmdb`, `tvdb`, `mal`, `kitsu`, `anidb`, `simkl`, `trakt`, `nuvio`).
    - Normalizes ratings to 10-point scale and statuses to standard enum (`completed`, `watching`, `on_hold`, `plan_to_watch`, `dropped`).
 4. **Strict Deduplication & Reconciliation**:
    - Groups items based on:
@@ -70,7 +74,7 @@ media_sync_pipeline/
 5. **Exporting**:
    - Exports master JSON datasets + markdown summary report.
    - Exports `reconciliation_flagged.json` and `reconciliation.md`.
-   - Exports service-native import payloads (`exports/simkl_import.json`, `exports/trakt_import.json`, `exports/mal_import.xml`).
+   - Exports service-native import payloads (`exports/simkl_import.json`, `exports/trakt_import.json`, `exports/mal_import.xml`, `exports/nuvio_custom_collection.json`).
 
 ---
 
@@ -94,7 +98,8 @@ media_sync_pipeline/
     "kitsu": "5953",
     "anidb": "7702",
     "simkl": 41530,
-    "trakt": 33166
+    "trakt": 33166,
+    "nuvio": "collection-UGED6TEZ"
   },
   
   "aggregated_status": "completed",
@@ -103,7 +108,8 @@ media_sync_pipeline/
   "sources": {
     "trakt": { "present": true, "status": "completed", "rating": 10, "watch_count": 1, "raw": {} },
     "simkl": { "present": true, "status": "completed", "rating": 10, "watch_count": 1, "raw": {} },
-    "mal": { "present": true, "status": "Completed", "score": 10, "watched_episodes": 24, "raw": {} }
+    "mal": { "present": true, "status": "Completed", "score": 10, "watched_episodes": 24, "raw": {} },
+    "nuvio": { "present": true, "status": "watching", "catalog": "trakt.upnext", "raw": {} }
   },
 
   "episodes": [],
@@ -126,5 +132,5 @@ media_sync_pipeline/
 - Unit/integration tests using standard `unittest` to verify:
   - Multi-ID matching logic (>=2 IDs match vs 1 ID match flagged).
   - Title + Start/End Date matching and date conflict flagging.
-  - Trakt JSON parser, MAL XML parser, and Simkl normalizers.
+  - Trakt JSON parser, MAL XML parser, Nuvio JSON parser, and Simkl normalizers.
   - Export payload formatting validity (valid JSON/XML structure).
