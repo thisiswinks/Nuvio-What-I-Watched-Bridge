@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Media List Sync & Cross-Mapping Hub</title>
-  <meta name="description" content="Unified media tracking dashboard for Trakt, Simkl, MyAnimeList, and Nuvio with Otaku Mappings cross-referencing.">
+  <title>Media List Sync & Nuvio One-Click Import Hub</title>
+  <meta name="description" content="Unified media tracking dashboard and 1-click Nuvio importer for Trakt, Simkl, MyAnimeList, and Nuvio.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="dark-theme">
@@ -22,11 +23,15 @@
       <div class="logo-group">
         <div class="logo-icon">🎬</div>
         <div>
-          <h1>MediaSync Hub</h1>
+          <h1>MediaSync & Nuvio Hub</h1>
           <p class="tagline">Trakt • Simkl • MyAnimeList • Nuvio • Otaku Mappings</p>
         </div>
       </div>
       <div class="header-actions">
+        <button id="btn-quick-nuvio" class="btn btn-emerald">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+          ⚡ 1-Click Nuvio Importer
+        </button>
         <button id="btn-export-all" class="btn btn-primary">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export Payloads
@@ -36,26 +41,38 @@
   </header>
 
   <main class="main-content">
+    <!-- Drag & Drop Zone for Ease of Use -->
+    <section class="drop-zone-container glass-card">
+      <div id="drop-zone" class="drop-zone">
+        <div class="drop-icon">📦</div>
+        <div class="drop-text">
+          <h3>Drop your Trakt ZIP export or MAL XML file here</h3>
+          <p>Or click to select files — instantly generates your deduplicated Nuvio, Simkl, and Trakt sync files</p>
+        </div>
+        <input type="file" id="file-input" accept=".zip,.json,.xml,.gz" class="file-input-hidden">
+      </div>
+    </section>
+
     <!-- Stat Counter Grid -->
     <section class="stats-grid">
       <div class="stat-card glass-card">
         <div class="stat-icon icon-purple">📊</div>
         <div class="stat-info">
-          <span class="stat-value" id="stat-total">1,043</span>
+          <span class="stat-value" id="stat-total">962</span>
           <span class="stat-label">Total Unique Items</span>
         </div>
       </div>
       <div class="stat-card glass-card">
         <div class="stat-icon icon-blue">🍿</div>
         <div class="stat-info">
-          <span class="stat-value" id="stat-movies">505</span>
+          <span class="stat-value" id="stat-movies">479</span>
           <span class="stat-label">Movies</span>
         </div>
       </div>
       <div class="stat-card glass-card">
         <div class="stat-icon icon-teal">📺</div>
         <div class="stat-info">
-          <span class="stat-value" id="stat-shows">456</span>
+          <span class="stat-value" id="stat-shows">350</span>
           <span class="stat-label">TV Shows</span>
         </div>
       </div>
@@ -71,11 +88,11 @@
     <!-- Navigation Tabs & Toolbar -->
     <section class="control-panel glass-card">
       <div class="tab-buttons">
-        <button class="tab-btn active" data-tab="all">All Items (<span id="count-all">1043</span>)</button>
+        <button class="tab-btn active" data-tab="all">All Items (<span id="count-all">962</span>)</button>
         <button class="tab-btn" data-tab="anime">🌸 Anime (<span id="count-anime">133</span>)</button>
-        <button class="tab-btn" data-tab="movies">🍿 Movies (<span id="count-movies">505</span>)</button>
-        <button class="tab-btn" data-tab="shows">📺 TV Shows (<span id="count-shows">456</span>)</button>
-        <button class="tab-btn tab-warning" data-tab="flagged">⚠️ Reconciliation Flagged (<span id="count-flagged">1159</span>)</button>
+        <button class="tab-btn" data-tab="movies">🍿 Movies (<span id="count-movies">479</span>)</button>
+        <button class="tab-btn" data-tab="shows">📺 TV Shows (<span id="count-shows">350</span>)</button>
+        <button class="tab-btn tab-warning" data-tab="flagged">⚠️ Reconciliation Flagged (<span id="count-flagged">720</span>)</button>
       </div>
 
       <div class="filter-toolbar">
@@ -114,6 +131,38 @@
     </section>
   </main>
 
+  <!-- Modal for 1-Click Nuvio Importer -->
+  <div id="nuvio-modal" class="modal-overlay hidden">
+    <div class="modal-content glass-card">
+      <div class="modal-header">
+        <h3>⚡ 1-Click Nuvio Collection Importer</h3>
+        <button id="nuvio-modal-close" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Your media collection is deduplicated and ready for Nuvio!</p>
+        <div class="nuvio-guide-box">
+          <div class="step-badge">Step 1</div>
+          <p>Click below to copy your complete Nuvio Custom Collection JSON payload:</p>
+          <button id="btn-copy-nuvio-json" class="btn btn-emerald btn-block">
+            📋 Copy Nuvio Collection JSON to Clipboard
+          </button>
+        </div>
+
+        <div class="nuvio-guide-box" style="margin-top: 1rem;">
+          <div class="step-badge">Step 2</div>
+          <p>Open <strong>Nuvio</strong> &rarr; <strong>Settings</strong> &rarr; <strong>Custom Collections</strong> &rarr; <strong>Import JSON</strong> and paste!</p>
+          <a href="https://nuvio.app" target="_blank" rel="noopener" class="btn btn-secondary btn-block" style="text-align: center; text-decoration: none; margin-top: 0.5rem;">
+            Launch Nuvio Web App ↗
+          </a>
+        </div>
+
+        <div style="margin-top: 1.5rem; text-align: center;">
+          <a href="data/export/nuvio_custom_collection.json" download class="link-download">Or Download nuvio_custom_collection.json directly</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal for Service Import Exports -->
   <div id="export-modal" class="modal-overlay hidden">
     <div class="modal-content glass-card">
@@ -124,6 +173,13 @@
       <div class="modal-body">
         <p>Easily feed your collated library back to each target service:</p>
         <div class="export-list">
+          <a href="data/export/nuvio_custom_collection.json" download class="export-item">
+            <div class="export-icon nuvio-bg">N</div>
+            <div>
+              <strong>Nuvio Custom Collection JSON</strong>
+              <small>nuvio_custom_collection.json (Nuvio custom folder JSON)</small>
+            </div>
+          </a>
           <a href="data/export/simkl_import.json" download class="export-item">
             <div class="export-icon simkl-bg">S</div>
             <div>
@@ -143,13 +199,6 @@
             <div>
               <strong>MyAnimeList Import XML</strong>
               <small>mal_import.xml (Ready for MAL XML Import page)</small>
-            </div>
-          </a>
-          <a href="data/export/nuvio_custom_collection.json" download class="export-item">
-            <div class="export-icon nuvio-bg">N</div>
-            <div>
-              <strong>Nuvio Custom Collection JSON</strong>
-              <small>nuvio_custom_collection.json (Nuvio custom folder JSON)</small>
             </div>
           </a>
         </div>

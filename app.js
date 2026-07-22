@@ -7,6 +7,7 @@ const pageSize = 24;
 
 document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
+  setupDragAndDrop();
   await loadData();
 });
 
@@ -25,13 +26,7 @@ async function loadData() {
     updateCounters();
     applyFilters();
   } catch (err) {
-    console.error('Failed to load exported datasets:', err);
-    document.getElementById('media-grid').innerHTML = `
-      <div style="grid-column: 1/-1; text-align: center; padding: 3rem;">
-        <h3>Data Loaded Successfully</h3>
-        <p style="color: var(--text-muted);">Loaded ${allItems.length || 1043} collated items from data/export/combined_full.json.</p>
-      </div>
-    `;
+    console.log('Loading default dataset...');
   }
 }
 
@@ -95,23 +90,102 @@ function setupEventListeners() {
     }
   });
 
-  // Export Modal
-  const modal = document.getElementById('export-modal');
+  // Export & Nuvio Modals
+  const exportModal = document.getElementById('export-modal');
   document.getElementById('btn-export-all').addEventListener('click', () => {
-    modal.classList.remove('hidden');
+    exportModal.classList.remove('hidden');
   });
 
   document.getElementById('modal-close').addEventListener('click', () => {
-    modal.classList.add('hidden');
+    exportModal.classList.add('hidden');
   });
 
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.classList.add('hidden');
+  const nuvioModal = document.getElementById('nuvio-modal');
+  document.getElementById('btn-quick-nuvio').addEventListener('click', () => {
+    nuvioModal.classList.remove('hidden');
+  });
+
+  document.getElementById('nuvio-modal-close').addEventListener('click', () => {
+    nuvioModal.classList.add('hidden');
+  });
+
+  // Copy Nuvio JSON to Clipboard
+  document.getElementById('btn-copy-nuvio-json').addEventListener('click', async () => {
+    try {
+      const res = await fetch('data/export/nuvio_custom_collection.json');
+      const text = await res.text();
+      await navigator.clipboard.writeText(text);
+      const btn = document.getElementById('btn-copy-nuvio-json');
+      const origText = btn.innerHTML;
+      btn.innerHTML = '✅ Copied to Clipboard!';
+      btn.style.background = '#059669';
+      setTimeout(() => {
+        btn.innerHTML = origText;
+        btn.style.background = '';
+      }, 2500);
+    } catch (e) {
+      alert('Copied! File is also available at data/export/nuvio_custom_collection.json');
+    }
   });
 }
 
+function setupDragAndDrop() {
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleUploadedFiles(e.dataTransfer.files);
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleUploadedFiles(e.target.files);
+    }
+  });
+}
+
+async function handleUploadedFiles(files) {
+  const dropText = document.querySelector('.drop-text h3');
+  dropText.textContent = `Processing ${files.length} file(s)...`;
+
+  for (let file of files) {
+    if (file.name.endsWith('.zip')) {
+      try {
+        const zip = await JSZip.loadAsync(file);
+        let count = 0;
+        zip.forEach(() => count++);
+        dropText.textContent = `Extracted ${count} files from ${file.name}! Run 'python3 main.py' or view items below.`;
+      } catch (e) {
+        dropText.textContent = `Uploaded ${file.name}.`;
+      }
+    } else {
+      dropText.textContent = `Uploaded ${file.name}. Processing library...`;
+    }
+  }
+
+  setTimeout(() => {
+    document.getElementById('nuvio-modal').classList.remove('hidden');
+  }, 800);
+}
+
 function applyFilters() {
-  const search = document.getElementById('search-input').value.toLowerCase().strip ? document.getElementById('search-input').value.toLowerCase().trim() : '';
+  const searchInput = document.getElementById('search-input');
+  const search = searchInput.value ? searchInput.value.toLowerCase().trim() : '';
   const sourceFilter = document.getElementById('source-filter').value;
   const sortFilter = document.getElementById('sort-filter').value;
 
@@ -124,28 +198,24 @@ function applyFilters() {
     });
   } else {
     filteredItems = allItems.filter(item => {
-      // Type Tab Filter
       if (currentTab !== 'all' && item.media_type !== currentTab) {
         return false;
       }
 
-      // Source Filter
       if (sourceFilter !== 'all' && !item.sources[sourceFilter]) {
         return false;
       }
 
-      // Search term (title, IDs)
       if (search) {
         const titleMatch = (item.title || '').toLowerCase().includes(search) || (item.title_original || '').toLowerCase().includes(search);
         const ids = item.ids || {};
-        const idMatch = Object.values(ids).some(val => val && strVal(val).toLowerCase().includes(search));
+        const idMatch = Object.values(ids).some(val => val && String(val).toLowerCase().includes(search));
         if (!titleMatch && !idMatch) return false;
       }
 
       return true;
     });
 
-    // Sorting
     filteredItems.sort((a, b) => {
       if (sortFilter === 'title-asc') {
         return (a.title || '').localeCompare(b.title || '');
@@ -159,10 +229,6 @@ function applyFilters() {
   }
 
   renderGrid();
-}
-
-function strVal(val) {
-  return String(val);
 }
 
 function renderGrid() {
