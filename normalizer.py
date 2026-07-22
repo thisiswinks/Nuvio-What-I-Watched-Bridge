@@ -227,6 +227,18 @@ def normalize_trakt_item(raw: Dict[str, Any]) -> CanonicalMediaItem:
     elif type_str == "anime":
         media_type = MediaType.ANIME
 
+    episodes = []
+    if episode_obj:
+        season_num = episode_obj.get("season", 1)
+        ep_num = episode_obj.get("number") or episode_obj.get("episode") or 1
+        ep_watched = raw.get("watched_at") or raw.get("last_watched_at")
+        episodes.append({
+            "season": season_num,
+            "episode": ep_num,
+            "watched_at": ep_watched,
+            "title": episode_obj.get("title")
+        })
+
     year_val = _parse_year(year, raw.get("last_watched_at") or raw.get("watched_at"))
     score = _parse_rating(raw.get("rating") or raw.get("user_rating"))
 
@@ -259,7 +271,9 @@ def normalize_trakt_item(raw: Dict[str, Any]) -> CanonicalMediaItem:
         aggregated_status=status,
         aggregated_rating=score,
         sources={"trakt": source_rec},
+        episodes=episodes,
     )
+
 
 
 def normalize_simkl_item(raw: Dict[str, Any]) -> CanonicalMediaItem:

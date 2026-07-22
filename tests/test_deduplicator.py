@@ -137,9 +137,9 @@ class TestDeduplicator(unittest.TestCase):
 
         result_conflict = deduplicate_items([item1, item2])
         self.assertEqual(len(result_conflict.flagged), 1)
-        self.assertIn("missing or conflicting", result_conflict.flagged[0]["reason"].lower())
+        self.assertIn("conflicting", result_conflict.flagged[0]["reason"].lower())
 
-        # Case B: Missing dates
+        # Case B: Missing dates with matching title auto-merges
         item3 = CanonicalMediaItem(
             uuid="uuid-3",
             media_type=MediaType.MOVIE,
@@ -158,8 +158,8 @@ class TestDeduplicator(unittest.TestCase):
         )
 
         result_missing = deduplicate_items([item3, item4])
-        self.assertEqual(len(result_missing.flagged), 1)
-        self.assertIn("missing or conflicting", result_missing.flagged[0]["reason"].lower())
+        self.assertEqual(len(result_missing.confirmed), 1)
+
 
 
 if __name__ == "__main__":

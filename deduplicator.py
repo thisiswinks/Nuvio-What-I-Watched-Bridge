@@ -48,7 +48,10 @@ def _dates_match(item1: CanonicalMediaItem, item2: CanonicalMediaItem) -> bool:
     y2 = _extract_year(item2)
     if y1 is not None and y2 is not None and y1 == y2:
         return True
-
+    if item1.start_date and item2.start_date and item1.start_date == item2.start_date:
+        return True
+    if not _dates_conflict(item1, item2):
+        return True
     return False
 
 
@@ -238,9 +241,9 @@ def deduplicate_items(items: List[CanonicalMediaItem]) -> DeduplicationResult:
         matching_ids = item1.ids.matching_id_count(item2.ids)
         is_multi_id_match = matching_ids >= 2
         is_title_date_match = _titles_match(item1, item2) and _dates_match(item1, item2)
-        has_title_or_date_conflict = _titles_conflict(item1, item2) or _dates_conflict(item1, item2) or _dates_missing(item1, item2)
+        has_title_or_date_conflict = _titles_conflict(item1, item2) or _dates_conflict(item1, item2)
 
-        # 1 matching ID auto-merges ONLY if there is no title or date conflict
+        # 1 matching ID auto-merges ONLY if there is no genuine title or date conflict
         is_single_id_no_conflict = (matching_ids == 1) and not has_title_or_date_conflict
 
         if is_multi_id_match or is_title_date_match or is_single_id_no_conflict:
@@ -258,18 +261,16 @@ def deduplicate_items(items: List[CanonicalMediaItem]) -> DeduplicationResult:
                         "matching_ids": 1,
                     })
                     flagged_pairs.add(pair_key)
-                elif _titles_match(item1, item2) and (
-                    _dates_conflict(item1, item2)
-                    or _dates_missing(item1, item2)
-                ):
+                elif _titles_match(item1, item2) and _dates_conflict(item1, item2):
                     flagged.append({
-                        "reason": "Title match with missing or conflicting start/end dates",
+                        "reason": "Title match with conflicting start/end dates",
                         "item1": item1,
                         "item2": item2,
                         "item1_title": item1.title,
                         "item2_title": item2.title,
                     })
                     flagged_pairs.add(pair_key)
+
 
 
     # 3. Merge components
