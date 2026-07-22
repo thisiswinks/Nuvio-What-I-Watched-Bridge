@@ -11,14 +11,17 @@ class SimklAPIExtractor(BaseExtractor):
         client_id: str = "",
         access_token: Optional[str] = None,
         raw_cache_dir: Union[str, Path] = Path("data/raw"),
+        force_refresh: bool = False,
     ):
         self.client_id = client_id
         self.access_token = access_token
         self.raw_cache_dir = Path(raw_cache_dir)
+        self.force_refresh = force_refresh
 
-    def extract(self) -> Any:
+    def extract(self, force_refresh: Optional[bool] = None) -> Any:
+        should_refresh = self.force_refresh if force_refresh is None else force_refresh
         cache_file = self.raw_cache_dir / "simkl" / "all_items.json"
-        if cache_file.exists() and cache_file.is_file():
+        if not should_refresh and cache_file.exists() and cache_file.is_file():
             try:
                 with open(cache_file, "r", encoding="utf-8") as f:
                     return json.load(f)

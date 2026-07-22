@@ -11,6 +11,7 @@ class Config:
     trakt_export_dir: str = "/Users/winks/Downloads/trakt-export-geekwinks"
     mal_export_file: str = "/Users/winks/Downloads/animelist_1784747731_-_11369504.xml"
     nuvio_export_file: str = "/Users/winks/Downloads/nuvio_custom_collection_2026-07-22.json"
+    output_dir: str = "data/export"
 
 
 def _load_dotenv(dotenv_path: str = ".env") -> None:
@@ -43,4 +44,5 @@ def load_config() -> Config:
         trakt_export_dir=os.getenv("TRAKT_EXPORT_DIR", "/Users/winks/Downloads/trakt-export-geekwinks"),
         mal_export_file=os.getenv("MAL_EXPORT_FILE", "/Users/winks/Downloads/animelist_1784747731_-_11369504.xml"),
         nuvio_export_file=os.getenv("NUVIO_EXPORT_FILE", "/Users/winks/Downloads/nuvio_custom_collection_2026-07-22.json"),
+        output_dir=os.getenv("OUTPUT_DIR", "data/export"),
     )
