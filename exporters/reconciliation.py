@@ -23,6 +23,9 @@ def export_reconciliation(flagged: List[Dict[str, Any]], out_dir: Union[str, Pat
 
     with open(out_path / "reconciliation_flagged.json", "w", encoding="utf-8") as f:
         json.dump(serializable_flagged, f, indent=2)
+    with open(out_path / "flagged_data.js", "w", encoding="utf-8") as f:
+        f.write("window.FLAGGED_MEDIA_DATA = " + json.dumps(serializable_flagged) + ";\n")
+
 
     md_lines = [
         "# Reconciliation Report",

@@ -238,17 +238,17 @@ def deduplicate_items(items: List[CanonicalMediaItem]) -> DeduplicationResult:
         matching_ids = item1.ids.matching_id_count(item2.ids)
         is_multi_id_match = matching_ids >= 2
         is_title_date_match = _titles_match(item1, item2) and _dates_match(item1, item2)
+        has_title_or_date_conflict = _titles_conflict(item1, item2) or _dates_conflict(item1, item2) or _dates_missing(item1, item2)
 
-        if is_multi_id_match or is_title_date_match:
+        # 1 matching ID auto-merges ONLY if there is no title or date conflict
+        is_single_id_no_conflict = (matching_ids == 1) and not has_title_or_date_conflict
+
+        if is_multi_id_match or is_title_date_match or is_single_id_no_conflict:
             ds.union(idx1, idx2)
         else:
             pair_key = (min(item1.uuid, item2.uuid), max(item1.uuid, item2.uuid))
             if pair_key not in flagged_pairs:
-                if matching_ids == 1 and (
-                    _titles_conflict(item1, item2)
-                    or _dates_conflict(item1, item2)
-                    or _dates_missing(item1, item2)
-                ):
+                if matching_ids == 1 and has_title_or_date_conflict:
                     flagged.append({
                         "reason": "1 matching external ID with conflicting dates/titles",
                         "item1": item1,
@@ -270,6 +270,7 @@ def deduplicate_items(items: List[CanonicalMediaItem]) -> DeduplicationResult:
                         "item2_title": item2.title,
                     })
                     flagged_pairs.add(pair_key)
+
 
     # 3. Merge components
     groups: Dict[int, List[CanonicalMediaItem]] = defaultdict(list)

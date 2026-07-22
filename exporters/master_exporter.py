@@ -33,6 +33,9 @@ def export_master_files(items: List[CanonicalMediaItem], out_dir: Union[str, Pat
         json.dump(anime, f, indent=2)
     with open(out_path / "combined_full.json", "w", encoding="utf-8") as f:
         json.dump(all_items, f, indent=2)
+    with open(out_path / "combined_data.js", "w", encoding="utf-8") as f:
+        f.write("window.COMBINED_MEDIA_DATA = " + json.dumps(all_items) + ";\n")
+
 
     source_counts = {}
     for item in items:

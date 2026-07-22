@@ -69,13 +69,14 @@ def _extract_canonical_ids(
 ) -> CanonicalIDs:
     ids_dict: Dict[str, Any] = {}
 
-    for key in ("ids", "movie", "show", "episode", "anime"):
+    for key in ("ids", "episode", "movie", "show", "anime"):
         val = raw.get(key)
         if isinstance(val, dict):
             if key == "ids":
                 ids_dict.update(val)
             elif "ids" in val and isinstance(val["ids"], dict):
                 ids_dict.update(val["ids"])
+
 
     def get_id(keys: List[str]) -> Optional[Any]:
         for k in keys:
@@ -100,21 +101,31 @@ def _extract_canonical_ids(
         if raw_id and isinstance(raw_id, str):
             nuvio = raw_id
 
-    imdb_val = str(imdb) if imdb is not None else None
+    def parse_imdb(val: Optional[Any]) -> Optional[str]:
+        if not val:
+            return None
+        v = str(val).strip()
+        if not v or v in ("0", "null", "none", "None", "tt0000000"):
+            return None
+        return v
 
     def parse_int_or_str(val: Optional[Any]) -> Optional[Union[str, int]]:
         if val is None:
             return None
         if isinstance(val, int):
-            return val
+            return val if val > 0 else None
         if isinstance(val, str):
-            return val.strip()
-        return str(val)
-
-    nuvio_val = str(nuvio) if nuvio is not None else None
+            v = val.strip()
+            if not v or v in ("0", "null", "none", "None", "0000"):
+                return None
+            if v.isdigit():
+                iv = int(v)
+                return iv if iv > 0 else None
+            return v
+        return None
 
     return CanonicalIDs(
-        imdb=imdb_val,
+        imdb=parse_imdb(imdb),
         tmdb=parse_int_or_str(tmdb),
         tvdb=parse_int_or_str(tvdb),
         mal=parse_int_or_str(mal),
@@ -122,8 +133,9 @@ def _extract_canonical_ids(
         anidb=parse_int_or_str(anidb),
         simkl=parse_int_or_str(simkl),
         trakt=parse_int_or_str(trakt),
-        nuvio=nuvio_val,
+        nuvio=parse_imdb(nuvio),
     )
+
 
 
 def normalize_mal_item(raw: Dict[str, Any]) -> CanonicalMediaItem:

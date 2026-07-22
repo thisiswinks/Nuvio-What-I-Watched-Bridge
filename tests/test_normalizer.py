@@ -25,7 +25,8 @@ class TestNormalizer(unittest.TestCase):
         self.assertIsInstance(item, CanonicalMediaItem)
         self.assertEqual(item.title, "AI no Idenshi")
         self.assertEqual(item.media_type, MediaType.ANIME)
-        self.assertEqual(item.ids.mal, "53787")
+        self.assertEqual(str(item.ids.mal), "53787")
+
         self.assertEqual(item.year, 2023)
         self.assertEqual(item.start_date, "2023-08-07")
         self.assertEqual(item.end_date, "2023-09-29")

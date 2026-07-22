@@ -12,23 +12,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadData() {
+  if (window.COMBINED_MEDIA_DATA && Array.isArray(window.COMBINED_MEDIA_DATA)) {
+    allItems = window.COMBINED_MEDIA_DATA;
+  }
+  if (window.FLAGGED_MEDIA_DATA && Array.isArray(window.FLAGGED_MEDIA_DATA)) {
+    flaggedItems = window.FLAGGED_MEDIA_DATA;
+  }
+
   try {
     const resCombined = await fetch('data/export/combined_full.json');
-    allItems = await resCombined.json();
-
-    try {
-      const resFlagged = await fetch('data/export/reconciliation_flagged.json');
-      flaggedItems = await resFlagged.json();
-    } catch (e) {
-      flaggedItems = [];
+    if (resCombined.ok) {
+      allItems = await resCombined.json();
     }
-
-    updateCounters();
-    applyFilters();
-  } catch (err) {
-    console.log('Loading default dataset...');
+    const resFlagged = await fetch('data/export/reconciliation_flagged.json');
+    if (resFlagged.ok) {
+      flaggedItems = await resFlagged.json();
+    }
+  } catch (e) {
+    // Local file:// protocol fetch fallback
   }
+
+  updateCounters();
+  applyFilters();
 }
+
 
 function updateCounters() {
   const animeCount = allItems.filter(i => i.media_type === 'anime').length;
