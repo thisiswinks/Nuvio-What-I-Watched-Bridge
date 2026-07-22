@@ -1,0 +1,6 @@
+.env
+data/raw/
+exports/
+__pycache__/
+*.pyc
+.DS_Store
