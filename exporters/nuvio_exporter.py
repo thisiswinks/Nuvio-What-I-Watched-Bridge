@@ -82,7 +82,8 @@ def export_nuvio_payload(
                         "title": item.title,
                         "season": season_num,
                         "episode": ep_num,
-                        "watched_at": _parse_timestamp_ms(ep_watched)
+                        "watched_at": _parse_timestamp_ms(ep_watched),
+                        "ids": ids_dict
                     })
             else:
                 # Add show entry
@@ -92,7 +93,8 @@ def export_nuvio_payload(
                     "title": item.title,
                     "season": 1,
                     "episode": 1,
-                    "watched_at": watched_ts
+                    "watched_at": watched_ts,
+                    "ids": ids_dict
                 })
         else:
             p_items.append({
@@ -101,8 +103,10 @@ def export_nuvio_payload(
                 "title": item.title,
                 "season": None,
                 "episode": None,
-                "watched_at": watched_ts
+                "watched_at": watched_ts,
+                "ids": ids_dict
             })
+
 
     custom_payload = {
         "collection_name": "Media List Sync Collection",

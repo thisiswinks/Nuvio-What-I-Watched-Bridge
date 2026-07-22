@@ -184,7 +184,8 @@ function generateNuvioWatchedPayload() {
             title: item.title,
             season: ep.season || 1,
             episode: ep.episode || 1,
-            watched_at: ep.watched_at ? new Date(ep.watched_at).getTime() : nowMs
+            watched_at: ep.watched_at ? new Date(ep.watched_at).getTime() : nowMs,
+            ids: ids
           });
         });
       } else {
@@ -194,7 +195,8 @@ function generateNuvioWatchedPayload() {
           title: item.title,
           season: 1,
           episode: 1,
-          watched_at: nowMs
+          watched_at: nowMs,
+          ids: ids
         });
       }
     } else {
@@ -204,9 +206,11 @@ function generateNuvioWatchedPayload() {
         title: item.title,
         season: null,
         episode: null,
-        watched_at: nowMs
+        watched_at: nowMs,
+        ids: ids
       });
     }
+
   });
 
   return {
