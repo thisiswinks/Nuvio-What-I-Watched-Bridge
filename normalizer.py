@@ -324,23 +324,24 @@ def normalize_nuvio_item(raw: Dict[str, Any]) -> CanonicalMediaItem:
     )
 
 
+
 def normalize_all_sources(
     extracted: Dict[str, List[Dict[str, Any]]]
 ) -> List[CanonicalMediaItem]:
+    from otaku_mapper import OtakuMapper
+    mapper = OtakuMapper()
     normalized_items: List[CanonicalMediaItem] = []
 
     for source_key, items in extracted.items():
         if not items:
             continue
 
-        # Handle container dicts like Simkl API extract output {"anime": [...], "movies": [...], "shows": [...]}
         item_list: List[Dict[str, Any]] = []
         if isinstance(items, dict):
             for sub_key, sub_items in items.items():
                 if isinstance(sub_items, list):
                     for sub_item in sub_items:
                         if isinstance(sub_item, dict):
-                            # attach sub_key media_type if missing
                             if "media_type" not in sub_item:
                                 sub_item["media_type"] = sub_key
                             item_list.append(sub_item)
@@ -351,24 +352,31 @@ def normalize_all_sources(
 
         for raw_item in item_list:
             if "mal" in source_lower:
-                normalized_items.append(normalize_mal_item(raw_item))
+                item = normalize_mal_item(raw_item)
             elif "trakt" in source_lower:
-                normalized_items.append(normalize_trakt_item(raw_item))
+                item = normalize_trakt_item(raw_item)
             elif "simkl" in source_lower:
-                normalized_items.append(normalize_simkl_item(raw_item))
+                item = normalize_simkl_item(raw_item)
             elif "nuvio" in source_lower:
-                normalized_items.append(normalize_nuvio_item(raw_item))
+                item = normalize_nuvio_item(raw_item)
             else:
-                # Fallback: check raw item structure
                 if "series_animedb_id" in raw_item:
-                    normalized_items.append(normalize_mal_item(raw_item))
+                    item = normalize_mal_item(raw_item)
                 elif "trakt" in raw_item.get("ids", {}) or "_source_file" in raw_item:
-                    normalized_items.append(normalize_trakt_item(raw_item))
+                    item = normalize_trakt_item(raw_item)
                 elif "simkl" in raw_item.get("ids", {}):
-                    normalized_items.append(normalize_simkl_item(raw_item))
-                elif "nuvio" in raw_item.get("ids", {}) or "mediaType" in raw_item:
-                    normalized_items.append(normalize_nuvio_item(raw_item))
+                    item = normalize_simkl_item(raw_item)
                 else:
-                    normalized_items.append(normalize_simkl_item(raw_item))
+                    item = normalize_simkl_item(raw_item)
+
+            # Otaku Mappings Enrichment
+            enriched_ids, is_anime = mapper.enrich_item_ids(item.ids, item.title)
+            item.ids = enriched_ids
+            if is_anime:
+                item.media_type = MediaType.ANIME
+
+            normalized_items.append(item)
+
 
     return normalized_items
+

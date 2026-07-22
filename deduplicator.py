@@ -7,7 +7,9 @@ from models import (
     CanonicalIDs,
     SourceRecord,
     MediaStatus,
+    MediaType,
 )
+
 
 
 @dataclass
@@ -154,9 +156,17 @@ def merge_items(
     start_date = item1.start_date or item2.start_date
     end_date = item1.end_date or item2.end_date
 
+    # Media type precedence: ANIME > MOVIE/SHOW
+    if item1.media_type == MediaType.ANIME or item2.media_type == MediaType.ANIME:
+        media_type = MediaType.ANIME
+    elif item1.media_type == MediaType.MOVIE and item2.media_type == MediaType.MOVIE:
+        media_type = MediaType.MOVIE
+    else:
+        media_type = item1.media_type or item2.media_type
+
     return CanonicalMediaItem(
         uuid=item1.uuid,
-        media_type=item1.media_type or item2.media_type,
+        media_type=media_type,
         title=title,
         title_original=title_orig,
         year=year,
@@ -169,6 +179,7 @@ def merge_items(
         episodes=unique_episodes,
         history_logs=unique_logs,
     )
+
 
 
 class DisjointSet:

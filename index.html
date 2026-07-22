@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Media List Sync & Cross-Mapping Hub</title>
+  <meta name="description" content="Unified media tracking dashboard for Trakt, Simkl, MyAnimeList, and Nuvio with Otaku Mappings cross-referencing.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+  <div class="background-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo-group">
+        <div class="logo-icon">🎬</div>
+        <div>
+          <h1>MediaSync Hub</h1>
+          <p class="tagline">Trakt • Simkl • MyAnimeList • Nuvio • Otaku Mappings</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-export-all" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Payloads
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Stat Counter Grid -->
+    <section class="stats-grid">
+      <div class="stat-card glass-card">
+        <div class="stat-icon icon-purple">📊</div>
+        <div class="stat-info">
+          <span class="stat-value" id="stat-total">1,043</span>
+          <span class="stat-label">Total Unique Items</span>
+        </div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-icon icon-blue">🍿</div>
+        <div class="stat-info">
+          <span class="stat-value" id="stat-movies">505</span>
+          <span class="stat-label">Movies</span>
+        </div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-icon icon-teal">📺</div>
+        <div class="stat-info">
+          <span class="stat-value" id="stat-shows">456</span>
+          <span class="stat-label">TV Shows</span>
+        </div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-icon icon-pink">🌸</div>
+        <div class="stat-info">
+          <span class="stat-value" id="stat-anime">133</span>
+          <span class="stat-label">Anime (Otaku Mapped)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs & Toolbar -->
+    <section class="control-panel glass-card">
+      <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="all">All Items (<span id="count-all">1043</span>)</button>
+        <button class="tab-btn" data-tab="anime">🌸 Anime (<span id="count-anime">133</span>)</button>
+        <button class="tab-btn" data-tab="movies">🍿 Movies (<span id="count-movies">505</span>)</button>
+        <button class="tab-btn" data-tab="shows">📺 TV Shows (<span id="count-shows">456</span>)</button>
+        <button class="tab-btn tab-warning" data-tab="flagged">⚠️ Reconciliation Flagged (<span id="count-flagged">1159</span>)</button>
+      </div>
+
+      <div class="filter-toolbar">
+        <div class="search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-input" placeholder="Search by title, IMDB, TMDB, TVDB, MAL ID...">
+        </div>
+
+        <div class="filter-dropdowns">
+          <select id="source-filter" class="select-input">
+            <option value="all">All Sources</option>
+            <option value="trakt">Trakt</option>
+            <option value="mal">MyAnimeList</option>
+            <option value="simkl">Simkl</option>
+          </select>
+
+          <select id="sort-filter" class="select-input">
+            <option value="title-asc">Title (A-Z)</option>
+            <option value="rating-desc">Rating (High to Low)</option>
+            <option value="year-desc">Release Year (Newest)</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Media Card Container -->
+    <section class="media-container">
+      <div id="media-grid" class="media-grid">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+      <div id="pagination-controls" class="pagination-controls">
+        <button id="btn-prev" class="btn btn-secondary">Previous</button>
+        <span id="page-info">Page 1 of 10</span>
+        <button id="btn-next" class="btn btn-secondary">Next</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal for Service Import Exports -->
+  <div id="export-modal" class="modal-overlay hidden">
+    <div class="modal-content glass-card">
+      <div class="modal-header">
+        <h3>Download Service-Native Import Payloads</h3>
+        <button id="modal-close" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Easily feed your collated library back to each target service:</p>
+        <div class="export-list">
+          <a href="data/export/simkl_import.json" download class="export-item">
+            <div class="export-icon simkl-bg">S</div>
+            <div>
+              <strong>Simkl API Batch Sync Payload</strong>
+              <small>simkl_import.json (History & Ratings API)</small>
+            </div>
+          </a>
+          <a href="data/export/trakt_import.json" download class="export-item">
+            <div class="export-icon trakt-bg">T</div>
+            <div>
+              <strong>Trakt API Batch Sync Payload</strong>
+              <small>trakt_import.json (Trakt API /sync/history)</small>
+            </div>
+          </a>
+          <a href="data/export/mal_import.xml" download class="export-item">
+            <div class="export-icon mal-bg">MAL</div>
+            <div>
+              <strong>MyAnimeList Import XML</strong>
+              <small>mal_import.xml (Ready for MAL XML Import page)</small>
+            </div>
+          </a>
+          <a href="data/export/nuvio_custom_collection.json" download class="export-item">
+            <div class="export-icon nuvio-bg">N</div>
+            <div>
+              <strong>Nuvio Custom Collection JSON</strong>
+              <small>nuvio_custom_collection.json (Nuvio custom folder JSON)</small>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <p>Powered by <strong>MediaSync Engine</strong> with <strong>Otaku Mappings</strong> database cross-referencing.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
