@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Set
 import re
+from collections import defaultdict
 from models import (
     CanonicalMediaItem,
     CanonicalIDs,
@@ -92,10 +93,8 @@ def _titles_conflict(item1: CanonicalMediaItem, item2: CanonicalMediaItem) -> bo
 def merge_items(
     item1: CanonicalMediaItem, item2: CanonicalMediaItem
 ) -> CanonicalMediaItem:
-    # 1. Merge IDs
     merged_ids = item1.ids.merge(item2.ids)
 
-    # 2. Merge Sources
     merged_sources: Dict[str, SourceRecord] = dict(item1.sources)
     for k, v in item2.sources.items():
         if k not in merged_sources:
@@ -113,7 +112,6 @@ def merge_items(
                 raw={**s1.raw, **s2.raw},
             )
 
-    # 3. Merge watch history logs & episodes
     combined_logs = list(item1.history_logs) + list(item2.history_logs)
     unique_logs = []
     for log in combined_logs:
@@ -126,7 +124,6 @@ def merge_items(
         if ep not in unique_episodes:
             unique_episodes.append(ep)
 
-    # 4. Rating averages
     ratings = [
         src.rating for src in merged_sources.values() if src.rating is not None
     ]
@@ -144,7 +141,6 @@ def merge_items(
             else None
         )
 
-    # 5. Status aggregation
     status = item1.aggregated_status or item2.aggregated_status
     if (
         item1.aggregated_status == MediaStatus.COMPLETED
@@ -152,7 +148,6 @@ def merge_items(
     ):
         status = MediaStatus.COMPLETED
 
-    # 6. Title and year fields
     title = item1.title or item2.title
     title_orig = item1.title_original or item2.title_original
     year = item1.year if item1.year is not None else item2.year
@@ -176,74 +171,106 @@ def merge_items(
     )
 
 
+class DisjointSet:
+    def __init__(self, n: int):
+        self.parent = list(range(n))
+
+    def find(self, i: int) -> int:
+        if self.parent[i] == i:
+            return i
+        self.parent[i] = self.find(self.parent[i])
+        return self.parent[i]
+
+    def union(self, i: int, j: int):
+        root_i = self.find(i)
+        root_j = self.find(j)
+        if root_i != root_j:
+            self.parent[root_i] = root_j
+
+
 def deduplicate_items(items: List[CanonicalMediaItem]) -> DeduplicationResult:
+    if not items:
+        return DeduplicationResult()
+
+    n = len(items)
+    ds = DisjointSet(n)
     flagged: List[Dict[str, Any]] = []
-    merged_items: List[CanonicalMediaItem] = [item for item in items]
     flagged_pairs: Set[tuple] = set()
 
-    changed = True
-    while changed:
-        changed = False
-        i = 0
-        while i < len(merged_items):
-            j = i + 1
-            merged_i = False
-            while j < len(merged_items):
-                item1 = merged_items[i]
-                item2 = merged_items[j]
+    # 1. Build candidate buckets to avoid O(N^2) comparison
+    buckets: Dict[str, List[int]] = defaultdict(list)
+    for idx, item in enumerate(items):
+        t_norm = normalize_title(item.title)
+        if t_norm:
+            buckets[f"t:{t_norm}"].append(idx)
+        
+        ids = item.ids
+        for field in ["imdb", "tmdb", "tvdb", "mal", "kitsu", "anidb", "simkl", "trakt", "nuvio"]:
+            val = getattr(ids, field)
+            if val is not None and str(val):
+                buckets[f"{field}:{val}"].append(idx)
 
-                matching_ids = item1.ids.matching_id_count(item2.ids)
+    # 2. Check candidate pairs in buckets
+    candidate_pairs: Set[tuple] = set()
+    for b_items in buckets.values():
+        if len(b_items) > 1:
+            for i_idx in range(len(b_items)):
+                for j_idx in range(i_idx + 1, len(b_items)):
+                    idx1, idx2 = b_items[i_idx], b_items[j_idx]
+                    if idx1 != idx2:
+                        candidate_pairs.add((min(idx1, idx2), max(idx1, idx2)))
 
-                is_multi_id_match = matching_ids >= 2
-                is_title_date_match = _titles_match(item1, item2) and _dates_match(
-                    item1, item2
-                )
+    for idx1, idx2 in candidate_pairs:
+        item1 = items[idx1]
+        item2 = items[idx2]
 
-                if is_multi_id_match or is_title_date_match:
-                    merged_items[i] = merge_items(item1, item2)
-                    merged_items.pop(j)
-                    changed = True
-                    merged_i = True
-                    break
-                else:
-                    pair_key = (
-                        min(item1.uuid, item2.uuid),
-                        max(item1.uuid, item2.uuid),
-                    )
-                    if pair_key not in flagged_pairs:
-                        if matching_ids == 1 and (
-                            _titles_conflict(item1, item2)
-                            or _dates_conflict(item1, item2)
-                            or _dates_missing(item1, item2)
-                        ):
-                            flagged.append(
-                                {
-                                    "reason": "1 matching external ID with conflicting dates/titles",
-                                    "item1": item1,
-                                    "item2": item2,
-                                    "item1_title": item1.title,
-                                    "item2_title": item2.title,
-                                    "matching_ids": 1,
-                                }
-                            )
-                            flagged_pairs.add(pair_key)
-                        elif _titles_match(item1, item2) and (
-                            _dates_conflict(item1, item2)
-                            or _dates_missing(item1, item2)
-                        ):
-                            flagged.append(
-                                {
-                                    "reason": "Title match with missing or conflicting start/end dates",
-                                    "item1": item1,
-                                    "item2": item2,
-                                    "item1_title": item1.title,
-                                    "item2_title": item2.title,
-                                }
-                            )
-                            flagged_pairs.add(pair_key)
-                    j += 1
-            if merged_i:
-                continue
-            i += 1
+        matching_ids = item1.ids.matching_id_count(item2.ids)
+        is_multi_id_match = matching_ids >= 2
+        is_title_date_match = _titles_match(item1, item2) and _dates_match(item1, item2)
 
-    return DeduplicationResult(confirmed=merged_items, flagged=flagged)
+        if is_multi_id_match or is_title_date_match:
+            ds.union(idx1, idx2)
+        else:
+            pair_key = (min(item1.uuid, item2.uuid), max(item1.uuid, item2.uuid))
+            if pair_key not in flagged_pairs:
+                if matching_ids == 1 and (
+                    _titles_conflict(item1, item2)
+                    or _dates_conflict(item1, item2)
+                    or _dates_missing(item1, item2)
+                ):
+                    flagged.append({
+                        "reason": "1 matching external ID with conflicting dates/titles",
+                        "item1": item1,
+                        "item2": item2,
+                        "item1_title": item1.title,
+                        "item2_title": item2.title,
+                        "matching_ids": 1,
+                    })
+                    flagged_pairs.add(pair_key)
+                elif _titles_match(item1, item2) and (
+                    _dates_conflict(item1, item2)
+                    or _dates_missing(item1, item2)
+                ):
+                    flagged.append({
+                        "reason": "Title match with missing or conflicting start/end dates",
+                        "item1": item1,
+                        "item2": item2,
+                        "item1_title": item1.title,
+                        "item2_title": item2.title,
+                    })
+                    flagged_pairs.add(pair_key)
+
+    # 3. Merge components
+    groups: Dict[int, List[CanonicalMediaItem]] = defaultdict(list)
+    for idx, item in enumerate(items):
+        root = ds.find(idx)
+        groups[root].append(item)
+
+    confirmed: List[CanonicalMediaItem] = []
+    for grp in groups.values():
+        merged = grp[0]
+        for next_item in grp[1:]:
+            merged = merge_items(merged, next_item)
+        confirmed.append(merged)
+
+    return DeduplicationResult(confirmed=confirmed, flagged=flagged)
