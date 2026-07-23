@@ -8,8 +8,9 @@
 
 > **Status: prototype / architecture reference.** This repository is the design
 > reference, anime mapping fixtures, and Simkl contract test-vector home. The
-> production sync runtime (live event capture, credentials, durable queues)
-> targets NuvioTV in Kotlin. See
+> production sync runtime (live event capture, QR/PIN login, credentials,
+> durable queues) targets NuvioTV in Kotlin. To wire it up, follow
+> [docs/NUVIO_INTEGRATION.md](docs/NUVIO_INTEGRATION.md). See also
 > [ADR 0001](docs/adr/0001-provider-runtime-in-nuviotv.md) and
 > [issue #3](https://github.com/thisiswinks/Nuvio-What-I-Watched-Bridge/issues/3).
 
