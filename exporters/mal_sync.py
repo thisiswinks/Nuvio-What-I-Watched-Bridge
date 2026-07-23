@@ -1,5 +1,6 @@
 import time
 import urllib.request
+import urllib.error
 import urllib.parse
 import json
 import logging
@@ -12,9 +13,16 @@ class MALSyncAdapter:
         self.access_token = access_token
         self.rate_delay_ms = rate_delay_ms
         self.base_url = "https://api.myanimelist.net/v2"
+        self._last_call_time = 0.0
 
     def update_anime_status(self, mal_id: str, status: str = "completed", num_watched_episodes: int = 1) -> bool:
-        """Update MyAnimeList status with mandatory 600ms delay between calls."""
+        """Update MyAnimeList status with mandatory rate delay between calls."""
+        now = time.time()
+        delay_s = self.rate_delay_ms / 1000.0
+        elapsed = now - self._last_call_time
+        if elapsed < delay_s:
+            time.sleep(delay_s - elapsed)
+
         url = f"{self.base_url}/anime/{mal_id}/my_list_status"
         params = urllib.parse.urlencode({
             "status": status,
@@ -31,9 +39,14 @@ class MALSyncAdapter:
             method="PUT"
         )
         try:
-            time.sleep(self.rate_delay_ms / 1000.0)  # Mandatory rate delay
             with urllib.request.urlopen(req, timeout=10) as resp:
+                self._last_call_time = time.time()
                 return resp.status in (200, 201)
+        except urllib.error.HTTPError as e:
+            self._last_call_time = time.time()
+            logger.error(f"MAL API v2 update failed (HTTP {e.code}) for anime ID {mal_id}: {e.read().decode('utf-8', errors='ignore')}")
+            return False
         except Exception as e:
+            self._last_call_time = time.time()
             logger.error(f"MAL API v2 update failed for anime ID {mal_id}: {e}")
             return False

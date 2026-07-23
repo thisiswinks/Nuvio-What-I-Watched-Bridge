@@ -1,4 +1,5 @@
 import urllib.request
+import urllib.error
 import json
 import logging
 from typing import List, Dict, Any, Optional
@@ -33,6 +34,9 @@ class NuvioSupabaseAdapter:
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
                 return resp.status in (200, 201)
+        except urllib.error.HTTPError as e:
+            logger.error(f"Nuvio Supabase RPC push failed (HTTP {e.code}): {e.read().decode('utf-8', errors='ignore')}")
+            return False
         except Exception as e:
             logger.error(f"Nuvio Supabase RPC push failed: {e}")
             return False

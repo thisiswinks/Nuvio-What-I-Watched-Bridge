@@ -8,13 +8,13 @@ def enrich_canonical_item(item: CanonicalMediaItem, otaku_mapper: Optional[Any] 
     match = otaku_mapper.lookup(item.ids, item.title)
     if match:
         # Preserve existing IDs, add missing IDs ONLY
-        if not item.ids.mal and match.get("mal_id"):
+        if not item.ids.mal and match.get("mal_id") is not None and str(match.get("mal_id")).lower() != "none":
             item.ids.mal = str(match["mal_id"])
-        if not item.ids.simkl and match.get("simkl_id"):
+        if not item.ids.simkl and match.get("simkl_id") is not None and str(match.get("simkl_id")).lower() != "none":
             item.ids.simkl = str(match["simkl_id"])
-        if not item.ids.kitsu and match.get("kitsu_id"):
+        if not item.ids.kitsu and match.get("kitsu_id") is not None and str(match.get("kitsu_id")).lower() != "none":
             item.ids.kitsu = str(match["kitsu_id"])
-        if not item.ids.anidb and match.get("anidb_id"):
+        if not item.ids.anidb and match.get("anidb_id") is not None and str(match.get("anidb_id")).lower() != "none":
             item.ids.anidb = str(match["anidb_id"])
         
         # Calculate absolute episode if season/episode offset present

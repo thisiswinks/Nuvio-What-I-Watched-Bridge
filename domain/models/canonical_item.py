@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional, Dict
-from domain.models.canonical_ids import CanonicalIDs
-from domain.models.outbox_state import ProviderOutboxState
+from .canonical_ids import CanonicalIDs
+from .outbox_state import ProviderOutboxState
 
 @dataclass
 class CanonicalMediaItem:
