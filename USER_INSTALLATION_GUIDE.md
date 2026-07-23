@@ -3,7 +3,7 @@
 
 ---
 
-## 🌟 What Does This Addon Do? (In 1 Sentence!)
+## What Does This Addon Do? (In 1 Sentence!)
 
 When you watch movies, TV shows, or anime on Nuvio TV, **What I Watched Sync** automatically updates your watch history on **MyAnimeList**, **Trakt**, and **Simkl** so you never lose track of what episode you are on!
 
@@ -25,11 +25,11 @@ Copy this link:
 2. Paste the link you copied in Step 1.
 3. Click **Install**.
 
-✨ **That's it!** You will see **"What I Watched Sync"** appear in your installed plugins list!
+**That's it!** You will see **"What I Watched Sync"** appear in your installed plugins list!
 
 ---
 
-## 📺 How to Connect Your Accounts with Your Phone (No Remote Typing!)
+## How to Connect Your Accounts with Your Phone (No Remote Typing!)
 
 1. Open **Nuvio TV Settings ➔ What I Watched Sync**.
 2. Click **Connect Trakt** or **Connect Simkl**.
