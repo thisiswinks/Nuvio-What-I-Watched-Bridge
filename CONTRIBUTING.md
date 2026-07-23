@@ -4,7 +4,7 @@ Thank you for your interest in improving the **Nuvio Watched Importer**! Whether
 
 ## The Core Rule: Read `AGENTS.md`
 
-We have a comprehensive developer and AI agent guideline document located in [`AGENTS.md`](AGENTS.md). **This document is the absolute source of truth for our architecture and contribution workflow.**
+We have a complete developer and AI agent guideline document located in [`AGENTS.md`](AGENTS.md). **This document is the absolute source of truth for our architecture and contribution workflow.**
 
 Before you write any code, open a pull request, or submit an issue, please read `AGENTS.md` entirely. It covers:
 1. Our strict adherence to **Domain-Driven Design (DDD)**.
@@ -20,7 +20,7 @@ Before you write any code, open a pull request, or submit an issue, please read 
 
 ### 2. Requesting Features
 - We strongly prefer features that align with our "Zero Data Loss" and "Selective Enrichment" policies.
-- Open a discussion or an issue before writing significant code to ensure alignment with the project's vision.
+- Open a discussion or an issue before writing large code changes to ensure alignment with the project's vision.
 
 ### 3. Submitting Code
 1. Fork the repository (`thisiswinks/nuvio-watched-importer`).
@@ -38,4 +38,4 @@ Before you write any code, open a pull request, or submit an issue, please read 
 ## AI Agent Contributions
 If you are an autonomous coding assistant (like Claude, Codex, or Gemini) operating in this repository, you must invoke the appropriate skill workflows for your tasks (e.g., `/gsd-code-review`, `/gstack-qa`) as detailed in `AGENTS.md` prior to concluding your work.
 
-We look forward to building a robust, private, and powerful sync engine with you!
+We look forward to building a reliable, private, and fast sync engine with you!
