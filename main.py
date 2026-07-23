@@ -1,14 +1,16 @@
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import List, Optional
 
-from config import load_config
+from config import get_simkl_anime_mode, load_config
 from extractors.mal_xml import MALXMLExtractor
 from extractors.trakt_json import TraktJSONExtractor
 from extractors.simkl_api import SimklAPIExtractor
 from normalizer import normalize_all_sources
 from deduplicator import deduplicate_items
+from application.use_cases.preview_simkl_routing import preview_simkl_routing
 from exporters.master_exporter import export_master_files
 from exporters.reconciliation import export_reconciliation
 from exporters.simkl_exporter import export_simkl_payload
@@ -25,6 +27,11 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
         "--refresh-api",
         action="store_true",
         help="Force refresh Simkl API cache and fetch fresh data from API",
+    )
+    parser.add_argument(
+        "--simkl-dry-run",
+        action="store_true",
+        help="Preview how each item would route to Simkl (Path A/B) without sending anything",
     )
     return parser.parse_args(args)
 
@@ -101,8 +108,23 @@ def main(cli_args: Optional[List[str]] = None) -> None:
     export_nuvio_payload(dedup_result.confirmed, out_dir)
     print("  - Nuvio import payload written (nuvio_custom_collection.json)")
 
+    # Optional: Simkl Path A/B routing preview (dry run, no network calls).
+    if args.simkl_dry_run:
+        anime_mode = get_simkl_anime_mode()
+        preview = preview_simkl_routing(dedup_result.confirmed, anime_mode)
+        preview_path = out_dir / "simkl_routing_preview.json"
+        with open(preview_path, "w", encoding="utf-8") as f:
+            json.dump(preview, f, indent=2)
+        s = preview["summary"]
+        print(
+            f"  - Simkl routing preview written (simkl_routing_preview.json): "
+            f"mode={preview['anime_mode']}, native={s['native']}, "
+            f"hybrid={s['hybrid']}, standard={s['standard']}, "
+            f"needs_identity={s['needs_identity']}"
+        )
+
     print("\n==========================================")
-    print("     Pipeline Execution Complete!         ")
+    print("     Pipeline execution complete.         ")
     print("==========================================")
 
 

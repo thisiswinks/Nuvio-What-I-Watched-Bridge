@@ -68,9 +68,9 @@ class Config:
     simkl_client_id: str
     simkl_client_secret: str
     simkl_access_token: Optional[str] = None
-    trakt_export_dir: Path = Path("/Users/winks/Downloads/trakt-export-geekwinks")
-    mal_export_file: Path = Path("/Users/winks/Downloads/animelist_1784747731_-_11369504.xml")
-    nuvio_export_file: Path = Path("/Users/winks/Downloads/nuvio_custom_collection_2026-07-22.json")
+    trakt_export_dir: Path = Path("data/import/trakt")
+    mal_export_file: Path = Path("data/import/mal_animelist.xml")
+    nuvio_export_file: Path = Path("data/import/nuvio_collection.json")
     raw_cache_dir: Path = Path("data/raw")
     output_dir: Path = Path("exports")
 
@@ -79,9 +79,9 @@ def load_config() -> Config:
         simkl_client_id=os.getenv("SIMKL_CLIENT_ID", ""),
         simkl_client_secret=os.getenv("SIMKL_CLIENT_SECRET", ""),
         simkl_access_token=os.getenv("SIMKL_ACCESS_TOKEN"),
-        trakt_export_dir=Path(os.getenv("TRAKT_EXPORT_DIR", "/Users/winks/Downloads/trakt-export-geekwinks")),
-        mal_export_file=Path(os.getenv("MAL_EXPORT_FILE", "/Users/winks/Downloads/animelist_1784747731_-_11369504.xml")),
-        nuvio_export_file=Path(os.getenv("NUVIO_EXPORT_FILE", "/Users/winks/Downloads/nuvio_custom_collection_2026-07-22.json")),
+        trakt_export_dir=Path(os.getenv("TRAKT_EXPORT_DIR", "data/import/trakt")),
+        mal_export_file=Path(os.getenv("MAL_EXPORT_FILE", "data/import/mal_animelist.xml")),
+        nuvio_export_file=Path(os.getenv("NUVIO_EXPORT_FILE", "data/import/nuvio_collection.json")),
     )
 ```
 
@@ -90,9 +90,9 @@ Create `.env.example`:
 SIMKL_CLIENT_ID=b7f7c1a6b3e0aef73f02ff29cc0e76ab0d693fc27d22a02aa0e56cb6938cd0f8
 SIMKL_CLIENT_SECRET=be86adda6c176a0d4e30c4358928b14ac13267a11bd27d2bda339bdd0efe2ee2
 SIMKL_ACCESS_TOKEN=
-TRAKT_EXPORT_DIR=/Users/winks/Downloads/trakt-export-geekwinks
-MAL_EXPORT_FILE=/Users/winks/Downloads/animelist_1784747731_-_11369504.xml
-NUVIO_EXPORT_FILE=/Users/winks/Downloads/nuvio_custom_collection_2026-07-22.json
+TRAKT_EXPORT_DIR=data/import/trakt
+MAL_EXPORT_FILE=data/import/mal_animelist.xml
+NUVIO_EXPORT_FILE=data/import/nuvio_collection.json
 ```
 
 Create `.gitignore`:
@@ -278,7 +278,7 @@ from extractors.trakt_json import TraktJSONExtractor
 
 class TestExtractors(unittest.TestCase):
     def test_mal_extractor(self):
-        mal_file = Path("/Users/winks/Downloads/animelist_1784747731_-_11369504.xml")
+        mal_file = Path("data/import/mal_animelist.xml")
         if mal_file.exists():
             extractor = MALXMLExtractor(mal_file)
             items = extractor.extract()

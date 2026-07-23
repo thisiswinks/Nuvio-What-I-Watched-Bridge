@@ -6,3 +6,11 @@ __pycache__/
 .DS_Store
 .gstack/
 .worktrees/
+
+# Exported watch history (PII) and generated pipeline output
+data/export/
+data/mappings/
+
+# GSD/superpowers planning state
+.planning/
+data/import/

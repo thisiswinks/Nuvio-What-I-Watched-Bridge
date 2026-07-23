@@ -1,52 +1,51 @@
-# 🌸 How to Install & Use "What I Watched Sync" on Nuvio TV
-### Simple Step-by-Step Guide for Everyone (Passes the MOM & ELI5 Test!)
+# Using What I Watched Sync
 
----
+This repository is the sync engine and design reference. The consumer TV addon
+(live playback capture, on-device account pairing) targets NuvioTV; see
+[ADR 0001](docs/adr/0001-provider-runtime-in-nuviotv.md). This guide covers what
+you can run today and what the finished NuvioTV experience is designed to do.
 
-## What Does This Addon Do? (In 1 Sentence!)
+## What it does
 
-When you watch movies, TV shows, or anime on Nuvio TV, **What I Watched Sync** automatically updates your watch history on **MyAnimeList**, **Trakt**, and **Simkl** so you never lose track of what episode you are on!
+When you watch movies, TV shows, or anime, What I Watched Sync updates your watch
+history on MyAnimeList, Trakt, Simkl, and Nuvio Sync so your progress stays in one
+place. Anime is mapped to the correct provider records using Otaku-Mappings.
 
----
+## Run the pipeline today
 
-## 📱 How to Install (Takes Only 30 Seconds!)
+You need Python 3.
 
-### Step 1: Copy the Addon Link
-Copy this link:
-`https://raw.githubusercontent.com/Geekwinks/trakt-export-geekwinks/main/manifest.json`
+1. Clone this repository.
+2. Copy `.env.example` to `.env` and add your provider keys.
+3. Point the importers at your export files (or set the paths in `.env`):
+   `TRAKT_EXPORT_DIR`, `MAL_EXPORT_FILE`, `NUVIO_EXPORT_FILE`.
+4. Run it:
 
-### Step 2: Open Nuvio TV Settings
-1. Turn on your TV or open the Nuvio TV app.
-2. Click on the **⚙️ Settings** icon in the top corner.
-3. Click on **Plugins & Addons**.
+   ```bash
+   PYTHONPATH=. python3 main.py
+   ```
 
-### Step 3: Paste and Click Add!
-1. Click **+ Add Repository URL**.
-2. Paste the link you copied in Step 1.
-3. Click **Install**.
+The pipeline normalizes your history, deduplicates it, and writes provider-ready
+payloads plus a reconciliation report to `data/export/`.
 
-**That's it!** You will see **"What I Watched Sync"** appear in your installed plugins list!
+## Connecting accounts on NuvioTV (designed)
 
----
+The finished NuvioTV addon pairs accounts without remote typing: open
+**Nuvio TV Settings → What I Watched Sync**, pick a service, and a QR code and PIN
+appear on screen. You approve on your phone, and the TV shows the account as
+connected. This flow lives in NuvioTV, not in this pipeline.
 
-## How to Connect Your Accounts with Your Phone (No Remote Typing!)
+## FAQ
 
-1. Open **Nuvio TV Settings ➔ What I Watched Sync**.
-2. Click **Connect Trakt** or **Connect Simkl**.
-3. A picture of a **QR Code** and a 6-letter PIN code will show up on your TV screen.
-4. Point your smartphone camera at the TV screen and tap the link that pops up.
-5. Tap **Approve** on your phone screen.
-6. Your TV screen will turn green and say **Connected!** 🎉
+**Does it cost anything?**
+No. It is free and open source (MIT).
 
----
+**Is my data private?**
+Yes. Processing runs on your device and the pipeline writes only to local files. No
+credentials are stored in this repository. Keep your `.env` out of version control
+(it is already in `.gitignore`), and never commit the contents of `data/export/`,
+which hold your real watch history.
 
-## ❓ Frequently Asked Questions (FAQ)
-
-### 1. Does this cost any money?
-**No!** It is 100% free and open-source.
-
-### 2. Is my password safe?
-**Yes!** We never ask for your password and we do not store your information on any external server. Everything stays 100% on your TV device.
-
-### 3. What if an episode doesn't show up on MyAnimeList?
-Don't worry! Your watch history is saved safely on your device. You can click the **[Edit]** or **[Search ID]** button right inside Nuvio settings to pick the right show.
+**What if an episode is not found on MyAnimeList or Simkl?**
+It is kept in your local history with an `unmatched` status and a recorded reason, so
+you can correct the ID later rather than losing the entry.

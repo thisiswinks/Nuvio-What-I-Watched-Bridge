@@ -12,6 +12,8 @@ def enrich_canonical_item(item: CanonicalMediaItem, otaku_mapper: Optional[Any] 
             item.ids.mal = str(match["mal_id"])
         if not item.ids.simkl and match.get("simkl_id") is not None and str(match.get("simkl_id")).lower() != "none":
             item.ids.simkl = str(match["simkl_id"])
+        if not item.ids.anilist and match.get("anilist_id") is not None and str(match.get("anilist_id")).lower() != "none":
+            item.ids.anilist = str(match["anilist_id"])
         if not item.ids.kitsu and match.get("kitsu_id") is not None and str(match.get("kitsu_id")).lower() != "none":
             item.ids.kitsu = str(match["kitsu_id"])
         if not item.ids.anidb and match.get("anidb_id") is not None and str(match.get("anidb_id")).lower() != "none":

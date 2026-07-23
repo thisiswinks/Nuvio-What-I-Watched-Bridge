@@ -11,14 +11,14 @@
     return {
       id: PLUGIN_ID,
       name: PLUGIN_NAME,
-      version: "1.0.0",
-      description: "2-Way Watch Progress & Otaku Mappings Sync for Trakt, MyAnimeList, Simkl, and Nuvio Sync",
+      version: "1.1.0",
+      description: "Outbound watch-history sync with Otaku-Mappings enrichment for Trakt, MyAnimeList, Simkl, and Nuvio Sync",
       types: ["anime", "movie", "series"],
       catalogs: [
         {
           type: "anime",
           id: "what_i_watched_library",
-          name: "🎬 What I Watched Library & History"
+          name: "What I Watched Library & History"
         }
       ]
     };
