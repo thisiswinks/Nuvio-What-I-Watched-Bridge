@@ -11,7 +11,7 @@
 
 * **100% Serverless & Private**: All data processing, deduplication, and synchronization logic runs directly on your Nuvio device.
 * **Multi-Platform Support**: Built-in, fully compliant API adapters for **Trakt**, **MyAnimeList (MAL)**, and **Simkl**.
-* **Smart Anime Enrichment**: Leverages the *Fribb* and *Otaku-Mappings* datasets to precisely align Nuvio media IDs with Anime tracking platforms. Never lose a scrobble due to mismatched IDs.
+* **Smart Anime Enrichment**: Uses the *Fribb* and *Otaku-Mappings* datasets to precisely align Nuvio media IDs with Anime tracking platforms. Never lose a scrobble due to mismatched IDs.
 * **Conflict Resolution Engine**: A transparent, customizable policy engine that lets you decide how to handle playback conflicts (e.g., prompt user vs. auto-merge).
 * **Strict Batching & Rate Limiting**: Built to strictly adhere to API rate limits (like MAL's 600ms delay) and chunk sizes (Simkl's 100-item maximums).
 * **ADHD & A11y Friendly UI**: Non-disruptive, polite toasts that conform to Nielsen Norman UX principles.
