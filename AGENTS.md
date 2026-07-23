@@ -11,6 +11,7 @@ Welcome AI agents and human contributors! This document outlines architectural s
   - `application/`: Orchestrates use cases (`process_scrobble.py`, `flush_outbox.py`).
   - `infrastructure/`: External API adapters (Trakt, MAL, Simkl, Nuvio Supabase) and persistence stores (`local_storage.py`).
   - `ui/`: Nuvio Addon manifest (`manifest.json`), Hermes JS provider bundle (`providers/otaku_sync_plugin.js`), and toast notifier (`ui/toast_notifier.js`).
+- **Runtime split**: the sync engine, routing, and contract vectors live here; the production runtime (live capture, QR/PIN login, credentials, durable queues) is NuvioTV Kotlin. Nuvio's JS plugin runtime is a `getStreams` stream scraper and cannot run sync. See [docs/NUVIO_INTEGRATION.md](docs/NUVIO_INTEGRATION.md) and [ADR 0001](docs/adr/0001-provider-runtime-in-nuviotv.md).
 - **100% On-Device / Serverless**: No central backend servers. Everything executes on the client device.
 - **Selective Enrichment**: `Fribb/anime-lists` and `Goldenfreddy0703/Otaku-Mappings` enrich missing IDs/offsets ONLY. Never overwrite valid existing IDs. All enrichment data is additive and also carries into our canonical store.
 - **Zero Data Loss**: No payload or conflict item is ever discarded. Everything is transparent.

@@ -1,6 +1,16 @@
 /**
- * What I Watched Sync Plugin
- * Hermes-compatible Nuvio Provider JS Bundle
+ * What I Watched Sync - reference plugin bundle
+ *
+ * NOTE: this is a reference/identity stub, NOT the sync runtime. NuvioTV's JS
+ * plugin runtime (core/plugin/PluginRuntime.kt) is a stream scraper: it only
+ * calls getStreams(tmdbId, mediaType, season, episode). It never calls
+ * getManifest/getCatalog and never receives playback events, so watch-history
+ * sync cannot run here. Sync lives in native NuvioTV Kotlin services; see
+ * docs/NUVIO_INTEGRATION.md and docs/adr/0001-provider-runtime-in-nuviotv.md.
+ *
+ * getManifest/getCatalog below describe the addon's identity and the catalog
+ * surface for a Stremio-style addon host; getCatalog returns an empty list
+ * because real library data comes from the on-device store, not this bundle.
  */
 
 (function () {
@@ -25,21 +35,9 @@
   }
 
   function getCatalog(type, id, extra) {
-    // Returns Otaku-enriched catalog items to Nuvio TV UI
-    return Promise.resolve({
-      metas: [
-        {
-          id: "mal:58921",
-          type: "anime",
-          name: "Jack-of-All-Trades, Party of None",
-          poster: "https://myanimelist.net/images/anime/1000/1.jpg",
-          description: "Synced across Trakt, MAL (ID: 58921), and Simkl via What I Watched Sync.",
-          releaseInfo: "2026",
-          genres: ["Anime", "Fantasy"],
-          status: "MAL Synced • Simkl Synced"
-        }
-      ]
-    });
+    // Reference stub: the real library is served from the on-device store, not
+    // fabricated here. Returns an empty catalog rather than placeholder data.
+    return Promise.resolve({ metas: [] });
   }
 
   if (typeof module !== "undefined" && module.exports) {
