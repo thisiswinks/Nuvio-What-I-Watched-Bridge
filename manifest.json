@@ -1,0 +1,27 @@
+{
+  "name": "What I Watched Sync",
+  "id": "com.nuvio.plugin.whatiwatchedsync",
+  "version": "1.0.0",
+  "description": "2-Way Watch Progress & Otaku Mappings Sync for Trakt, MyAnimeList, Simkl, and Nuvio Sync",
+  "author": "Geekwinks",
+  "icon": "https://nuvio.tv/logo.png",
+  "types": [
+    "anime",
+    "movie",
+    "series"
+  ],
+  "resources": [
+    "catalog",
+    "settings"
+  ],
+  "catalogs": [
+    {
+      "type": "anime",
+      "id": "what_i_watched_library",
+      "name": "🎬 What I Watched Library & History"
+    }
+  ],
+  "providers": [
+    "providers/otaku_sync_plugin.js"
+  ]
+}
