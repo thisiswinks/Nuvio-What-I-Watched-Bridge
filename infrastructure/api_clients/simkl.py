@@ -143,8 +143,9 @@ class SimklSyncAdapter:
                 self._fail_chunk(entries, result, self._http_reason(e))
                 return
             except Exception as e:  # noqa: BLE001 - network/timeout: unknown outcome
-                # 5xx/timeout: the write may have landed. Do NOT retry in-call;
-                # surface for outbox-cycle retry so we never double-write.
+                # 5xx/timeout: the write may have landed. Do NOT retry in-call
+                # (that could double-write); report it as an error so the caller
+                # can decide whether to retry on a later run.
                 self._fail_chunk(entries, result, f"transport error: {_sanitize(e)}")
                 return
 

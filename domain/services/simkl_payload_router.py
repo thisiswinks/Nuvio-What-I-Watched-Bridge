@@ -181,6 +181,19 @@ class SimklPayloadRouter:
             return hybrid
         if media_type == "movie":
             return self._route_standard(item, "movie", ids)
+        # Episode-less anime typed as "anime" is ambiguous: a film is one unit
+        # (safe to send), but a series would mark every episode watched. Without
+        # a movie signal we cannot tell them apart, so we quarantine rather than
+        # risk corrupting a whole series. Anime films must reach the router as
+        # media_type="movie" (Nuvio playback events do this) to sync as a unit.
+        native_present = any(k in ids for k in NATIVE_ID_FIELDS)
+        if native_present:
+            return self._quarantine(
+                item,
+                "episode-less anime with a native id is ambiguous between a film "
+                "and a whole series; type anime films as media_type='movie' to "
+                "sync them as a single unit",
+            )
         return self._quarantine(
             item,
             "anime lacks both a native id with absolute-episode provenance and "

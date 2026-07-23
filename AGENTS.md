@@ -79,7 +79,7 @@ Anime is serialized to Simkl per the [official anime guide](https://api.simkl.or
 - **Never derive a cour-specific Simkl id from a shared TMDB/TVDB parent.** Unresolved identity quarantines as `needs_identity` (outbox status `unmatched`), never guessed.
 - **Native path needs absolute-episode provenance.** A native-id anime with only S/E coordinates falls back to Path A; it is never locally converted to an absolute number.
 - **No episode-less series history writes** (they mark the whole show watched). Only movies post without episode coordinates.
-- **Endpoint**: `POST /sync/history`. Retry only on 429 (honor `Retry-After`, capped 60s); 5xx/timeout have unknown outcome and defer to the next outbox cycle, never an in-call retry. Mode is `providers.simkl.anime_mode` in `config.yaml`.
+- **Endpoint**: `POST /sync/history`. Retry only on 429 (honor `Retry-After`, capped 60s). 5xx/timeout have an unknown outcome, so the adapter never retries them in-call; the item is left `error` for the caller to retry on a later run. Durable queueing and automatic re-drain are NuvioTV's responsibility (ADR 0001), not this reference adapter. `not_found` echoes are permanent identity mismatches and are quarantined as `unmatched`, not retried. Mode is `providers.simkl.anime_mode` in `config.yaml`.
 
 ---
 

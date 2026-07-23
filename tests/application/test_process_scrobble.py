@@ -66,6 +66,16 @@ class TestProcessScrobble(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(result.ids.imdb, "tt123456")
 
+    def test_scrobble_preserves_source_anilist_id(self):
+        result = process_scrobble(
+            title="Test Anime",
+            media_type="anime",
+            season=1, episode=5,
+            watched_date="2026-07-23",
+            ids={"mal": "100", "anilist": "20958"},
+        )
+        self.assertEqual(result.ids.anilist, "20958")
+
 
 if __name__ == "__main__":
     unittest.main()

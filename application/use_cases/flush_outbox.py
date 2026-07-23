@@ -1,13 +1,15 @@
 import logging
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
 from domain.models.canonical_item import CanonicalMediaItem
 from domain.models.outbox_state import ProviderOutboxState
 from domain.services.simkl_payload_router import (
     AnimeSyncMode,
     SimklPayloadRouter,
 )
-from infrastructure.api_clients.nuvio_supabase import NuvioSupabaseAdapter
 from datetime import datetime, timezone
+
+if TYPE_CHECKING:  # avoid application -> concrete infrastructure coupling at runtime
+    from infrastructure.api_clients.nuvio_supabase import NuvioSupabaseAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +31,7 @@ def flush_outbox(
     items: List[CanonicalMediaItem],
     mal_adapter=None,
     simkl_adapter=None,
-    nuvio_adapter: NuvioSupabaseAdapter = None,
+    nuvio_adapter: "NuvioSupabaseAdapter" = None,
     nuvio_profile_id: int = None,
     simkl_anime_mode: str = AnimeSyncMode.AUTO_NATIVE_PREFERRED.value,
 ) -> dict:
@@ -99,25 +101,30 @@ def flush_outbox(
         if correlation:
             try:
                 result = simkl_adapter.sync_history(routed)
-                # Attribute per-entry outcomes back to originating items.
-                failed_entry_ids = [
-                    id(e) for err in result.errors for e in err.get("entries", [])
-                ]
+                # Attribute per-entry outcomes back to originating items by value
+                # (not object identity): the adapter — or a future non-Python
+                # one — may return reconstructed entries, so match on content.
                 now = datetime.now(timezone.utc).isoformat()
                 for entry, item in correlation:
                     state = item.outbox["simkl"]
-                    if id(entry) in failed_entry_ids:
+                    failed_reason = next(
+                        (err["reason"] for err in result.errors
+                         if any(entry == fe for fe in err.get("entries", []))),
+                        None,
+                    )
+                    if failed_reason is not None:
+                        # Transport/HTTP failure: outcome uncertain, retryable.
                         state.status = "error"
                         state.retry_count += 1
-                        state.error_message = "; ".join(
-                            e["reason"] for e in result.errors
-                        )[:500]
+                        state.error_message = failed_reason[:500]
                         results["simkl"]["errored"] += 1
                     elif any(_entry_matches(entry, echo) for echo in result.not_found):
-                        state.status = "error"
-                        state.retry_count += 1
+                        # Simkl could not resolve this identity: permanent, not
+                        # transient. Quarantine rather than mark as a retryable
+                        # error so it is not resent every cycle.
+                        state.status = "unmatched"
                         state.error_message = "Simkl reported not_found"
-                        results["simkl"]["errored"] += 1
+                        results["simkl"]["skipped"] += 1
                     else:
                         state.status = "synced"
                         state.last_synced_at = now

@@ -30,6 +30,7 @@ def process_scrobble(
         tmdb=ids.get("tmdb"),
         tvdb=ids.get("tvdb"),
         mal=ids.get("mal"),
+        anilist=ids.get("anilist"),
         kitsu=ids.get("kitsu"),
         anidb=ids.get("anidb"),
         simkl=ids.get("simkl"),

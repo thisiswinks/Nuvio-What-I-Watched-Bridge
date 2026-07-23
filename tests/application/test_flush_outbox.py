@@ -49,7 +49,7 @@ class TestFlushOutboxSimkl(unittest.TestCase):
         self.assertEqual(simkl.calls, [])
         self.assertEqual(results["simkl"]["synced"], 0)
 
-    def test_not_found_echo_marks_only_that_item(self):
+    def test_not_found_echo_quarantines_only_that_item(self):
         good = anime_item(title="Good", ids=CanonicalIDs(mal="21"), absolute_episode=1)
         bad = anime_item(title="Bad", ids=CanonicalIDs(mal="999"), absolute_episode=1)
         # Simkl echoes the bad one with an INTEGER id (str-vs-int match must work)
@@ -57,7 +57,9 @@ class TestFlushOutboxSimkl(unittest.TestCase):
         simkl = FakeSimkl(result=result)
         flush_outbox([good, bad], simkl_adapter=simkl)
         self.assertEqual(good.outbox["simkl"].status, "synced")
-        self.assertEqual(bad.outbox["simkl"].status, "error")
+        # not_found is a permanent identity mismatch, not a retryable error.
+        self.assertEqual(bad.outbox["simkl"].status, "unmatched")
+        self.assertEqual(bad.outbox["simkl"].retry_count, 0)
 
     def test_partial_chunk_failure_attributes_to_failed_entries(self):
         a = anime_item(title="A", ids=CanonicalIDs(mal="1"), absolute_episode=1)
@@ -99,6 +101,44 @@ class TestFlushOutboxSimkl(unittest.TestCase):
         flush_outbox([item], simkl_adapter=simkl, simkl_anime_mode="native_only")
         self.assertEqual(item.outbox["simkl"].status, "unmatched")
         self.assertEqual(simkl.calls, [])
+
+    def test_error_attribution_survives_entry_round_trip(self):
+        # A non-Python adapter (or a JSON round-trip) returns reconstructed
+        # entry dicts, not the same objects. Value matching must still work.
+        import json
+        a = anime_item(title="A", ids=CanonicalIDs(mal="1"), absolute_episode=1)
+        b = anime_item(title="B", ids=CanonicalIDs(mal="2"), absolute_episode=1)
+
+        def sync_history(routed):
+            roundtripped = json.loads(json.dumps(routed["anime"][1]))
+            return SimklSyncResult(added=1, errors=[{"reason": "HTTP 503", "entries": [roundtripped]}])
+
+        simkl = FakeSimkl()
+        simkl.sync_history = sync_history
+        flush_outbox([a, b], simkl_adapter=simkl)
+        self.assertEqual(a.outbox["simkl"].status, "synced")
+        self.assertEqual(b.outbox["simkl"].status, "error")
+
+    def test_episodeless_anime_typed_item_is_quarantined_not_sent(self):
+        # An anime film must arrive typed as media_type="movie" to sync as a
+        # unit. An episode-less item typed "anime" is ambiguous (film vs whole
+        # series) and must be quarantined, never sent to /sync/history.
+        item = anime_item(ids=CanonicalIDs(mal="32281"))  # no episodes, typed anime
+        simkl = FakeSimkl()
+        flush_outbox([item], simkl_adapter=simkl)
+        self.assertEqual(item.outbox["simkl"].status, "unmatched")
+        self.assertEqual(simkl.calls, [])
+
+    def test_anime_film_typed_movie_syncs_as_unit(self):
+        item = CanonicalMediaItem(
+            title="Your Name", media_type="movie", is_anime=True,
+            ids=CanonicalIDs(mal="32281", tmdb="372058"),
+        )
+        simkl = FakeSimkl()
+        flush_outbox([item], simkl_adapter=simkl)
+        self.assertEqual(item.outbox["simkl"].status, "synced")
+        self.assertEqual(len(simkl.calls[0]["anime"]), 1)
+        self.assertNotIn("tmdb", simkl.calls[0]["anime"][0]["ids"])
 
 
 if __name__ == "__main__":

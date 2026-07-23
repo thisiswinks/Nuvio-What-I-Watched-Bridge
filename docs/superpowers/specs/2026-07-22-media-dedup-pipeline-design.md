@@ -10,9 +10,9 @@
 
 Build a modular, easy-to-read Python pipeline to extract, unify, collate, deduplicate, and export media watch history, ratings, collections, and watchlists across four services:
 1. **Simkl**: Fetched via API using OAuth PIN flow and cached locally.
-2. **Trakt**: Read from local JSON export files (`/Users/winks/Downloads/trakt-export-geekwinks`).
-3. **MyAnimeList (MAL)**: Read from local XML export (`/Users/winks/Downloads/animelist_1784747731_-_11369504.xml`).
-4. **Nuvio**: Read from local JSON custom collection export (`/Users/winks/Downloads/nuvio_custom_collection_2026-07-22.json`).
+2. **Trakt**: Read from local JSON export files (`data/import/trakt`).
+3. **MyAnimeList (MAL)**: Read from local XML export (`data/import/mal_animelist.xml`).
+4. **Nuvio**: Read from local JSON custom collection export (`data/import/nuvio_collection.json`).
 
 The pipeline must:
 - Preserve all external metadata identifiers (`imdb_id`, `tmdb_id`, `tvdb_id`, `mal_id`, `kitsu_id`, `anidb_id`, `simkl_id`, `trakt_id`, `nuvio_id`).
