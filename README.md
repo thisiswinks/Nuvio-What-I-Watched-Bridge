@@ -2,7 +2,7 @@
 
 > A 100% on-device synchronization engine that tracks what you watch on Nuvio TV and bridges it to Trakt, MyAnimeList (MAL), and Simkl.
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-green.svg)](https://thisiswinks.github.io/nuvio-watched-importer/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-green.svg)](https://thisiswinks.github.io/Nuvio-What-I-Watched-Bridge/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Nuvio Watched Importer** is a privacy-first, on-device syncing addon. No middleman servers, no data harvesting. It observes your playback on Nuvio, enriches anime titles using Otaku mappings, resolves identity conflicts locally, and safely exports your history to the tracking platforms you love.

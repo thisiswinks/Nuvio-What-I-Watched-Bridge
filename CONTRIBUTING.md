@@ -23,7 +23,7 @@ Before you write any code, open a pull request, or submit an issue, please read 
 - Open a discussion or an issue before writing large code changes to ensure alignment with the project's vision.
 
 ### 3. Submitting Code
-1. Fork the repository (`thisiswinks/nuvio-watched-importer`).
+1. Fork the repository (`thisiswinks/Nuvio-What-I-Watched-Bridge`).
 2. Create a clean feature branch.
 3. Write your tests *first* in `tests/domain/`, `tests/infrastructure/`, or `tests/application/`.
 4. Ensure all layers respect the DDD boundaries (e.g., absolutely no `urllib` or external dependencies in the `domain/` layer).
