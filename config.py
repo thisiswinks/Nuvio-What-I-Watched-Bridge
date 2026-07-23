@@ -1,6 +1,12 @@
 import os
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Dict, Optional
+
+VALID_ANIME_MODES = (
+    "auto_native_preferred",
+    "tvdb_hybrid_only",
+    "native_only",
+)
 
 
 @dataclass
@@ -31,6 +37,62 @@ def _load_dotenv(dotenv_path: str = ".env") -> None:
                     os.environ[key] = val
     except Exception:
         pass
+
+
+def _load_yaml_settings(path: str = "config.yaml") -> Dict[str, Any]:
+    """Minimal strict reader for the config.yaml subset we use.
+
+    Supports two-space-indented nested mappings with scalar values and inline
+    ``#`` comments. Not a general YAML parser; lists and multi-line values are
+    intentionally unsupported so config.yaml stays the single source of truth
+    without adding a third-party dependency (AGENTS.md: stdlib only).
+    """
+    settings: Dict[str, Any] = {}
+    if not os.path.isfile(path):
+        return settings
+    stack = [(-1, settings)]
+    with open(path, "r", encoding="utf-8") as f:
+        for raw in f:
+            line = raw.rstrip("\n")
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            indent = len(line) - len(line.lstrip(" "))
+            key, _, value = line.strip().partition(":")
+            key = key.strip()
+            value = value.split("#", 1)[0].strip().strip("'\"")
+            while stack and indent <= stack[-1][0]:
+                stack.pop()
+            parent = stack[-1][1]
+            if value == "":
+                child: Dict[str, Any] = {}
+                parent[key] = child
+                stack.append((indent, child))
+            else:
+                parent[key] = value
+    return settings
+
+
+def get_simkl_anime_mode(yaml_path: str = "config.yaml") -> str:
+    """Resolve the Simkl anime routing mode.
+
+    Env var ``SIMKL_ANIME_MODE`` overrides config.yaml
+    (providers.simkl.anime_mode); default is ``auto_native_preferred``. An
+    unknown value fails loud rather than silently defaulting.
+    """
+    settings = _load_yaml_settings(yaml_path)
+    mode = os.getenv("SIMKL_ANIME_MODE")
+    if not mode:
+        mode = (
+            settings.get("providers", {})
+            .get("simkl", {})
+            .get("anime_mode", "auto_native_preferred")
+        )
+    mode = str(mode).strip().lower()
+    if mode not in VALID_ANIME_MODES:
+        raise ValueError(
+            f"Invalid Simkl anime_mode {mode!r}; expected one of {list(VALID_ANIME_MODES)}"
+        )
+    return mode
 
 
 def load_config() -> Config:

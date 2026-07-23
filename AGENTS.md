@@ -70,6 +70,17 @@ Test count should be ≥46 Python tests + 2 JS tests. All must pass before any c
 - **Error Handling**: Every external API call must have try/except with logging. Never silently swallow errors.
 - **Rate Limiting**: MAL requires 600ms delay between calls. Simkl batches at 100 items. These are enforced in the adapter layer.
 
+### Simkl Anime Routing (Path A / Path B)
+
+Anime is serialized to Simkl per the [official anime guide](https://api.simkl.org/guides/anime). Routing is pure domain logic in `domain/services/simkl_payload_router.py`; the contract is frozen in `tests/fixtures/simkl_contract_vectors.json` (the portable spec for the NuvioTV Kotlin port). See [ADR 0001](docs/adr/0001-provider-runtime-in-nuviotv.md).
+
+- **Path B (native)**: native id (MAL/AniList/AniDB/Kitsu) + absolute episode → `anime[]` envelope, flat `episodes: [{number}]`, never a `season` key, ids restricted to native + simkl.
+- **Path A (hybrid)**: TMDB/TVDB + season coordinates → `shows[]` envelope, `use_tvdb_anime_seasons: true`, TVDB `seasons[]`. Send both tmdb and tvdb when both exist.
+- **Never derive a cour-specific Simkl id from a shared TMDB/TVDB parent.** Unresolved identity quarantines as `needs_identity` (outbox status `unmatched`), never guessed.
+- **Native path needs absolute-episode provenance.** A native-id anime with only S/E coordinates falls back to Path A; it is never locally converted to an absolute number.
+- **No episode-less series history writes** (they mark the whole show watched). Only movies post without episode coordinates.
+- **Endpoint**: `POST /sync/history`. Retry only on 429 (honor `Retry-After`, capped 60s); 5xx/timeout have unknown outcome and defer to the next outbox cycle, never an in-call retry. Mode is `providers.simkl.anime_mode` in `config.yaml`.
+
 ---
 
 ## 6. DDD Layer Boundaries (Strict)

@@ -1,0 +1,71 @@
+{
+  "_comment": "Golden Simkl anime write-contract vectors. Portable spec consumed by the NuvioTV Kotlin port and verified by tests/domain/test_simkl_payload_router.py. Source: https://api.simkl.org/guides/anime (guide as published 2026-07). See docs/adr/0001-provider-runtime-in-nuviotv.md.",
+  "vectors": [
+    {
+      "name": "native_cour_split_flat_episode",
+      "mode": "auto_native_preferred",
+      "item": {"media_type": "anime", "is_anime": true, "ids": {"mal": "25777", "tmdb": "1429", "tvdb": "267440"}, "absolute_episode": 4, "watched_date": "2026-07-01T20:00:00Z"},
+      "expected": {"path": "native", "envelope": "anime", "entry": {"ids": {"mal": 25777}, "episodes": [{"number": 4, "watched_at": "2026-07-01T20:00:00Z"}]}}
+    },
+    {
+      "name": "native_absolute_long_runner",
+      "mode": "auto_native_preferred",
+      "item": {"media_type": "anime", "is_anime": true, "ids": {"mal": "21", "anidb": "69"}, "absolute_episode": 403},
+      "expected": {"path": "native", "envelope": "anime", "entry": {"ids": {"mal": 21, "anidb": 69}, "episodes": [{"number": 403}]}}
+    },
+    {
+      "name": "hybrid_split_cour_coordinates",
+      "mode": "auto_native_preferred",
+      "item": {"title": "Shingeki no Kyojin", "year": 2013, "media_type": "anime", "is_anime": true, "ids": {"tmdb": "1429"}, "season": 3, "episode": 13},
+      "expected": {"path": "hybrid", "envelope": "shows", "entry": {"title": "Shingeki no Kyojin", "year": 2013, "ids": {"tmdb": 1429}, "use_tvdb_anime_seasons": true, "seasons": [{"number": 3, "episodes": [{"number": 13}]}]}}
+    },
+    {
+      "name": "hybrid_sends_both_ids",
+      "mode": "auto_native_preferred",
+      "item": {"media_type": "anime", "is_anime": true, "ids": {"tmdb": "1429", "tvdb": "267440"}, "season": 2, "episode": 4},
+      "expected": {"path": "hybrid", "envelope": "shows", "entry": {"ids": {"tmdb": 1429, "tvdb": 267440}, "use_tvdb_anime_seasons": true, "seasons": [{"number": 2, "episodes": [{"number": 4}]}]}}
+    },
+    {
+      "name": "native_id_seasonal_only_falls_back_to_hybrid",
+      "mode": "auto_native_preferred",
+      "item": {"media_type": "anime", "is_anime": true, "ids": {"mal": "25777", "tvdb": "267440"}, "season": 2, "episode": 4},
+      "expected": {"path": "hybrid", "envelope": "shows"}
+    },
+    {
+      "name": "shared_parent_no_coords_quarantines",
+      "mode": "auto_native_preferred",
+      "item": {"media_type": "anime", "is_anime": true, "ids": {"tmdb": "1429"}},
+      "expected": {"path": "needs_identity", "envelope": null}
+    },
+    {
+      "name": "native_only_refuses_hybrid",
+      "mode": "native_only",
+      "item": {"media_type": "anime", "is_anime": true, "ids": {"mal": "25777", "tvdb": "267440"}, "season": 2, "episode": 4},
+      "expected": {"path": "needs_identity", "envelope": null}
+    },
+    {
+      "name": "tvdb_hybrid_only_refuses_native",
+      "mode": "tvdb_hybrid_only",
+      "item": {"media_type": "anime", "is_anime": true, "ids": {"mal": "25777"}, "absolute_episode": 4},
+      "expected": {"path": "needs_identity", "envelope": null}
+    },
+    {
+      "name": "anime_movie_native",
+      "mode": "auto_native_preferred",
+      "item": {"title": "Your Name", "media_type": "movie", "is_anime": true, "ids": {"mal": "32281", "tmdb": "372058"}},
+      "expected": {"path": "native", "envelope": "anime", "entry": {"ids": {"mal": 32281}, "title": "Your Name"}}
+    },
+    {
+      "name": "non_anime_movie_standard",
+      "mode": "auto_native_preferred",
+      "item": {"title": "Inception", "year": 2010, "media_type": "movie", "ids": {"imdb": "tt1375666"}, "watched_date": "2026-07-02T21:00:00Z"},
+      "expected": {"path": "standard", "envelope": "movies", "entry": {"title": "Inception", "year": 2010, "ids": {"imdb": "tt1375666"}, "watched_at": "2026-07-02T21:00:00Z"}}
+    },
+    {
+      "name": "non_anime_show_standard_no_flag",
+      "mode": "auto_native_preferred",
+      "item": {"media_type": "show", "ids": {"tvdb": "81797"}, "season": 2, "episode": 1},
+      "expected": {"path": "standard", "envelope": "shows", "entry": {"ids": {"tvdb": 81797}, "seasons": [{"number": 2, "episodes": [{"number": 1}]}]}}
+    }
+  ]
+}

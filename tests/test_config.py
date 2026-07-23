@@ -1,6 +1,45 @@
 import unittest
 import os
+import tempfile
 from unittest.mock import patch
+
+
+class TestSimklAnimeMode(unittest.TestCase):
+    def _write_yaml(self, mode_line: str) -> str:
+        fd, path = tempfile.mkstemp(suffix=".yaml")
+        os.close(fd)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("providers:\n  simkl:\n    enabled: true\n" + mode_line)
+        return path
+
+    def test_reads_mode_from_yaml(self):
+        from config import get_simkl_anime_mode
+        path = self._write_yaml('    anime_mode: "native_only"\n')
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(get_simkl_anime_mode(path), "native_only")
+        os.unlink(path)
+
+    def test_env_overrides_yaml(self):
+        from config import get_simkl_anime_mode
+        path = self._write_yaml('    anime_mode: "native_only"\n')
+        with patch.dict(os.environ, {"SIMKL_ANIME_MODE": "tvdb_hybrid_only"}, clear=True):
+            self.assertEqual(get_simkl_anime_mode(path), "tvdb_hybrid_only")
+        os.unlink(path)
+
+    def test_default_when_absent(self):
+        from config import get_simkl_anime_mode
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(
+                get_simkl_anime_mode("/nonexistent.yaml"), "auto_native_preferred"
+            )
+
+    def test_unknown_mode_fails_loud(self):
+        from config import get_simkl_anime_mode
+        path = self._write_yaml('    anime_mode: "turbo"\n')
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(ValueError):
+                get_simkl_anime_mode(path)
+        os.unlink(path)
 
 
 class TestConfig(unittest.TestCase):

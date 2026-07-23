@@ -9,6 +9,7 @@ class CanonicalIDs:
     tmdb: Optional[str] = None
     tvdb: Optional[str] = None
     mal: Optional[str] = None
+    anilist: Optional[str] = None
     kitsu: Optional[str] = None
     anidb: Optional[str] = None
     simkl: Optional[str] = None
@@ -22,6 +23,7 @@ class CanonicalIDs:
             tmdb=self.tmdb or other.tmdb,
             tvdb=self.tvdb or other.tvdb,
             mal=self.mal or other.mal,
+            anilist=self.anilist or other.anilist,
             kitsu=self.kitsu or other.kitsu,
             anidb=self.anidb or other.anidb,
             simkl=self.simkl or other.simkl,
