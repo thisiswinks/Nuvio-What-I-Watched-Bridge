@@ -169,31 +169,7 @@ def merge_items(
         if log not in unique_logs:
             unique_logs.append(log)
 
-    episodes_by_key = {}
     combined_episodes = list(item1.episodes) + list(item2.episodes)
-    for ep in combined_episodes:
-        key = (ep.get("season", 1), ep.get("episode", 1))
-        if key not in episodes_by_key:
-            episodes_by_key[key] = dict(ep)
-        else:
-            existing = episodes_by_key[key]
-            w1 = existing.get("watched_at")
-            w2 = ep.get("watched_at")
-            if w1 and w2:
-                existing["watched_at"] = min(w1, w2)
-            elif w2:
-                existing["watched_at"] = w2
-            
-            if not existing.get("title") and ep.get("title"):
-                existing["title"] = ep.get("title")
-                
-            if "ids" in ep and isinstance(ep["ids"], CanonicalIDs):
-                if "ids" in existing and isinstance(existing["ids"], CanonicalIDs):
-                    existing["ids"] = existing["ids"].merge(ep["ids"])
-                else:
-                    existing["ids"] = ep["ids"]
-
-    unique_episodes = sorted(episodes_by_key.values(), key=lambda x: (x.get("season", 1), x.get("episode", 1)))
 
     ratings = [
         src.rating for src in merged_sources.values() if src.rating is not None
@@ -245,7 +221,7 @@ def merge_items(
         aggregated_status=status,
         aggregated_rating=avg_rating,
         sources=merged_sources,
-        episodes=unique_episodes,
+        episodes=combined_episodes,
         history_logs=unique_logs,
     )
 
@@ -350,6 +326,7 @@ def deduplicate_items(items: List[CanonicalMediaItem]) -> DeduplicationResult:
         merged = grp[0]
         for next_item in grp[1:]:
             merged = merge_items(merged, next_item)
+        merged.deduplicate_episodes()
         confirmed.append(merged)
 
     return DeduplicationResult(confirmed=confirmed, flagged=flagged)

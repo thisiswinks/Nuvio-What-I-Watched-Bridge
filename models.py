@@ -102,3 +102,40 @@ class CanonicalMediaItem:
     sources: Dict[str, SourceRecord] = field(default_factory=dict)
     episodes: List[Dict[str, Any]] = field(default_factory=list)
     history_logs: List[Dict[str, Any]] = field(default_factory=list)
+
+    def deduplicate_episodes(self) -> None:
+        if not self.episodes:
+            return
+        episodes_by_key = {}
+        for ep in self.episodes:
+            s = ep.get("season")
+            e = ep.get("episode")
+            key = (s if s is not None else 1, e if e is not None else 1)
+            
+            if key not in episodes_by_key:
+                episodes_by_key[key] = dict(ep)
+            else:
+                existing = episodes_by_key[key]
+                w1 = existing.get("watched_at")
+                w2 = ep.get("watched_at")
+                if w1 and w2:
+                    existing["watched_at"] = min(w1, w2)
+                elif w2:
+                    existing["watched_at"] = w2
+                
+                if not existing.get("title") and ep.get("title"):
+                    existing["title"] = ep.get("title")
+                    
+                if "ids" in ep and isinstance(ep["ids"], CanonicalIDs):
+                    if "ids" in existing and isinstance(existing["ids"], CanonicalIDs):
+                        existing["ids"] = existing["ids"].merge(ep["ids"])
+                    else:
+                        existing["ids"] = ep["ids"]
+                        
+        self.episodes = sorted(
+            episodes_by_key.values(),
+            key=lambda x: (
+                x.get("season") if x.get("season") is not None else 1,
+                x.get("episode") if x.get("episode") is not None else 1
+            )
+        )
