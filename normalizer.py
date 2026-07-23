@@ -138,6 +138,16 @@ def _extract_canonical_ids(
     )
 
 
+def _parse_episode(raw_entry: Dict[str, Any], ep_obj: Dict[str, Any]) -> Dict[str, Any]:
+    ep_ids = _extract_canonical_ids(ep_obj, default_source="trakt")
+    return {
+        "season": ep_obj.get("season", 1),
+        "episode": ep_obj.get("number") or ep_obj.get("episode") or 1,
+        "watched_at": raw_entry.get("watched_at") or raw_entry.get("last_watched_at"),
+        "title": ep_obj.get("title"),
+        "ids": ep_ids,
+    }
+
 
 def normalize_mal_item(raw: Dict[str, Any]) -> CanonicalMediaItem:
     ids = _extract_canonical_ids(raw, default_source="mal")
@@ -230,15 +240,7 @@ def normalize_trakt_item(raw: Dict[str, Any]) -> CanonicalMediaItem:
 
     episodes = []
     if episode_obj:
-        season_num = episode_obj.get("season", 1)
-        ep_num = episode_obj.get("number") or episode_obj.get("episode") or 1
-        ep_watched = raw.get("watched_at") or raw.get("last_watched_at")
-        episodes.append({
-            "season": season_num,
-            "episode": ep_num,
-            "watched_at": ep_watched,
-            "title": episode_obj.get("title")
-        })
+        episodes.append(_parse_episode(raw, episode_obj))
 
     year_val = _parse_year(year, raw.get("last_watched_at") or raw.get("watched_at"))
     score = _parse_rating(raw.get("rating") or raw.get("user_rating"))
@@ -418,13 +420,7 @@ def normalize_all_sources(
                 else None
             )
             if ep_obj:
-                combined_episodes.append({
-                    "season": ep_obj.get("season", 1),
-                    "episode": ep_obj.get("number") or ep_obj.get("episode") or 1,
-                    "watched_at": raw_entry.get("watched_at")
-                    or raw_entry.get("last_watched_at"),
-                    "title": ep_obj.get("title"),
-                })
+                combined_episodes.append(_parse_episode(raw_entry, ep_obj))
         base_item.episodes = combined_episodes
         if "trakt" in base_item.sources:
             base_item.sources["trakt"].watch_count = len(group)

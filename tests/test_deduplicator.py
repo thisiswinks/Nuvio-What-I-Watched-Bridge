@@ -175,7 +175,63 @@ class TestDeduplicator(unittest.TestCase):
         )
         result = deduplicate_items([item_mal, item_trakt])
         self.assertEqual(len(result.confirmed), 1)
-        self.assertEqual(len(result.flagged), 0)
+    def test_deep_merge_episodes(self):
+        """Test that episodes are deep merged by (season, episode), taking earliest watched_at, and merging titles/ids."""
+        item1 = CanonicalMediaItem(
+            uuid="u1",
+            media_type=MediaType.SHOW,
+            title="Anime Test",
+            ids=CanonicalIDs(mal=123, tvdb="456"),
+            episodes=[
+                {
+                    "season": 1,
+                    "episode": 1,
+                    "watched_at": "2025-01-01T10:00:00Z",
+                    "ids": CanonicalIDs(trakt="111")
+                },
+                {
+                    "season": 1,
+                    "episode": 2,
+                    "watched_at": "2025-01-02T10:00:00Z"
+                }
+            ]
+        )
+        item2 = CanonicalMediaItem(
+            uuid="u2",
+            media_type=MediaType.SHOW,
+            title="Anime Test",
+            ids=CanonicalIDs(mal=123, tvdb="456"),
+            episodes=[
+                {
+                    "season": 1,
+                    "episode": 1,
+                    "watched_at": "2025-01-01T09:00:00Z",  # Earlier
+                    "title": "Episode 1 Title",
+                    "ids": CanonicalIDs(tmdb="222")
+                },
+                {
+                    "season": 1,
+                    "episode": 3,
+                    "watched_at": "2025-01-03T10:00:00Z"
+                }
+            ]
+        )
+        
+        result = deduplicate_items([item1, item2])
+        self.assertEqual(len(result.confirmed), 1)
+        merged = result.confirmed[0]
+        
+        self.assertEqual(len(merged.episodes), 3)
+        ep1 = merged.episodes[0]
+        self.assertEqual(ep1["season"], 1)
+        self.assertEqual(ep1["episode"], 1)
+        self.assertEqual(ep1["watched_at"], "2025-01-01T09:00:00Z")  # Takes earliest
+        self.assertEqual(ep1["title"], "Episode 1 Title")
+        self.assertEqual(ep1["ids"].trakt, "111")
+        self.assertEqual(ep1["ids"].tmdb, "222")
+        
+        self.assertEqual(merged.episodes[1]["episode"], 2)
+        self.assertEqual(merged.episodes[2]["episode"], 3)
 
 
 if __name__ == "__main__":

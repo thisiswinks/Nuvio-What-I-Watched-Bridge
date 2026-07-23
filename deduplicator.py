@@ -170,10 +170,6 @@ def merge_items(
             unique_logs.append(log)
 
     combined_episodes = list(item1.episodes) + list(item2.episodes)
-    unique_episodes = []
-    for ep in combined_episodes:
-        if ep not in unique_episodes:
-            unique_episodes.append(ep)
 
     ratings = [
         src.rating for src in merged_sources.values() if src.rating is not None
@@ -225,7 +221,7 @@ def merge_items(
         aggregated_status=status,
         aggregated_rating=avg_rating,
         sources=merged_sources,
-        episodes=unique_episodes,
+        episodes=combined_episodes,
         history_logs=unique_logs,
     )
 
@@ -330,6 +326,7 @@ def deduplicate_items(items: List[CanonicalMediaItem]) -> DeduplicationResult:
         merged = grp[0]
         for next_item in grp[1:]:
             merged = merge_items(merged, next_item)
+        merged.deduplicate_episodes()
         confirmed.append(merged)
 
     return DeduplicationResult(confirmed=confirmed, flagged=flagged)
