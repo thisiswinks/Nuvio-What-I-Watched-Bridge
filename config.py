@@ -14,9 +14,9 @@ class Config:
     simkl_client_id: str = ""
     simkl_client_secret: str = ""
     simkl_access_token: Optional[str] = None
-    trakt_export_dir: str = "/Users/winks/Downloads/trakt-export-geekwinks"
-    mal_export_file: str = "/Users/winks/Downloads/animelist_1784747731_-_11369504.xml"
-    nuvio_export_file: str = "/Users/winks/Downloads/nuvio_custom_collection_2026-07-22.json"
+    trakt_export_dir: str = "data/import/trakt"
+    mal_export_file: str = "data/import/mal_animelist.xml"
+    nuvio_export_file: str = "data/import/nuvio_collection.json"
     output_dir: str = "data/export"
 
 
@@ -103,8 +103,8 @@ def load_config() -> Config:
         simkl_client_id=os.getenv("SIMKL_CLIENT_ID", ""),
         simkl_client_secret=os.getenv("SIMKL_CLIENT_SECRET", ""),
         simkl_access_token=token if token else None,
-        trakt_export_dir=os.getenv("TRAKT_EXPORT_DIR", "/Users/winks/Downloads/trakt-export-geekwinks"),
-        mal_export_file=os.getenv("MAL_EXPORT_FILE", "/Users/winks/Downloads/animelist_1784747731_-_11369504.xml"),
-        nuvio_export_file=os.getenv("NUVIO_EXPORT_FILE", "/Users/winks/Downloads/nuvio_custom_collection_2026-07-22.json"),
+        trakt_export_dir=os.getenv("TRAKT_EXPORT_DIR", "data/import/trakt"),
+        mal_export_file=os.getenv("MAL_EXPORT_FILE", "data/import/mal_animelist.xml"),
+        nuvio_export_file=os.getenv("NUVIO_EXPORT_FILE", "data/import/nuvio_collection.json"),
         output_dir=os.getenv("OUTPUT_DIR", "data/export"),
     )

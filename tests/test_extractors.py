@@ -13,7 +13,7 @@ from extractors.simkl_api import SimklAPIExtractor
 
 class TestExtractors(unittest.TestCase):
     def test_mal_xml_extractor(self):
-        mal_path = Path("/Users/winks/Downloads/animelist_1784747731_-_11369504.xml")
+        mal_path = Path("data/import/mal_animelist.xml")
         extractor = MALXMLExtractor(mal_path)
         self.setIsInstance(extractor, BaseExtractor) if hasattr(self, "setIsInstance") else self.assertIsInstance(extractor, BaseExtractor)
         items = extractor.extract()
@@ -28,7 +28,7 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(non_existent.extract(), [])
 
     def test_trakt_json_extractor(self):
-        trakt_dir = Path("/Users/winks/Downloads/trakt-export-geekwinks")
+        trakt_dir = Path("data/import/trakt")
         extractor = TraktJSONExtractor(trakt_dir)
         self.assertIsInstance(extractor, BaseExtractor)
         items = extractor.extract()
@@ -42,7 +42,7 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(non_existent.extract(), [])
 
     def test_nuvio_json_extractor(self):
-        nuvio_path = Path("/Users/winks/Downloads/nuvio_custom_collection_2026-07-22.json")
+        nuvio_path = Path("data/import/nuvio_collection.json")
         extractor = NuvioJSONExtractor(nuvio_path)
         self.assertIsInstance(extractor, BaseExtractor)
         items = extractor.extract()

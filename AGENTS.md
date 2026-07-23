@@ -34,13 +34,13 @@ Key settings include:
 
 When performing tasks in this repository, agents should invoke the following skills:
 
-- **Brainstorming / Features** ➔ `/brainstorming`
-- **Architecture / Engineering Reviews** ➔ `/plan-eng-review`
-- **Developer Experience Reviews** ➔ `/plan-devex-review`
-- **Systematic Debugging** ➔ `/investigate`
-- **QA Testing & Bug Fixes** ➔ `/qa`
-- **Code Reviews** ➔ `/review`
-- **Documentation Updates** ➔ `/document-release`
+- **Brainstorming / Features** → `/brainstorming`
+- **Architecture / Engineering Reviews** → `/plan-eng-review`
+- **Developer Experience Reviews** → `/plan-devex-review`
+- **Systematic Debugging** → `/investigate`
+- **QA Testing & Bug Fixes** → `/qa`
+- **Code Reviews** → `/review`
+- **Documentation Updates** → `/document-release`
 
 ---
 
@@ -58,7 +58,7 @@ node tests/ui/test_plugin.js
 node tests/ui/test_toast.js
 ```
 
-Test count should be ≥46 Python tests + 2 JS tests. All must pass before any commit.
+Test count should be ≥100 Python tests + 2 JS tests. All must pass before any commit.
 
 ---
 
@@ -117,7 +117,7 @@ If a domain service needs data from an external source, it must receive it as a 
 ├── application/              # Use case orchestrators
 │   └── use_cases/            # process_scrobble, flush_outbox
 ├── infrastructure/           # External integrations
-│   ├── api_clients/          # NuvioSupabase adapter
+│   ├── api_clients/          # Simkl (/sync/history) + NuvioSupabase adapters
 │   ├── otaku_mappings/       # Fribb/Otaku-Mappings mapper repository
 │   └── persistence/          # LocalStorage (atomic JSON)
 ├── extractors/               # Data extractors (MAL XML, Trakt JSON, Simkl API, Nuvio JSON)

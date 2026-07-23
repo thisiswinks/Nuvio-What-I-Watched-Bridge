@@ -69,9 +69,9 @@ class TestConfig(unittest.TestCase):
             self.assertEqual(cfg.simkl_client_id, "")
             self.assertEqual(cfg.simkl_client_secret, "")
             self.assertIsNone(cfg.simkl_access_token)
-            self.assertEqual(cfg.trakt_export_dir, "/Users/winks/Downloads/trakt-export-geekwinks")
-            self.assertEqual(cfg.mal_export_file, "/Users/winks/Downloads/animelist_1784747731_-_11369504.xml")
-            self.assertEqual(cfg.nuvio_export_file, "/Users/winks/Downloads/nuvio_custom_collection_2026-07-22.json")
+            self.assertEqual(cfg.trakt_export_dir, "data/import/trakt")
+            self.assertEqual(cfg.mal_export_file, "data/import/mal_animelist.xml")
+            self.assertEqual(cfg.nuvio_export_file, "data/import/nuvio_collection.json")
 
 
 if __name__ == "__main__":

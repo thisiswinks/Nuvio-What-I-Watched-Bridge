@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-07-23
-- Context: [Issue #1](https://github.com/thisiswinks/Nuvio-What-I-Watched-Bridge/issues/1)
+- Context: [Issue #3](https://github.com/thisiswinks/Nuvio-What-I-Watched-Bridge/issues/3)
 
 ## Decision
 

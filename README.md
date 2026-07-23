@@ -1,17 +1,17 @@
-# Nuvio Watched Importer
+# What I Watched Sync
 
-> A 100% on-device synchronization engine that tracks what you watch on Nuvio TV and bridges it to Trakt, MyAnimeList (MAL), and Simkl.
+> A 100% on-device sync engine that bridges what you watch on Nuvio TV to Trakt, MyAnimeList (MAL), Simkl, and Nuvio Sync.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Nuvio Watched Importer** is a privacy-first, on-device sync engine. No middleman servers, no data harvesting. It normalizes your watch history, enriches anime titles using Otaku mappings, resolves identity conflicts locally, and exports your history to the tracking platforms you love.
+**What I Watched Sync** is a privacy-first, on-device sync engine. No middleman servers, no data harvesting. It normalizes your watch history, enriches anime titles using Otaku mappings, resolves identity conflicts locally, and exports your history to Trakt, MyAnimeList, Simkl, and Nuvio Sync.
 
 > **Status: prototype / architecture reference.** This repository is the design
 > reference, anime mapping fixtures, and Simkl contract test-vector home. The
 > production sync runtime (live event capture, credentials, durable queues)
 > targets NuvioTV in Kotlin. See
 > [ADR 0001](docs/adr/0001-provider-runtime-in-nuviotv.md) and
-> [issue #1](https://github.com/thisiswinks/Nuvio-What-I-Watched-Bridge/issues/1).
+> [issue #3](https://github.com/thisiswinks/Nuvio-What-I-Watched-Bridge/issues/3).
 
 ## Features
 
@@ -66,4 +66,4 @@ We welcome contributions! Whether you're an AI agent, a seasoned developer, or a
 
 ---
 
-*Nuvio Watched Importer - Your data, your device, your tracking.*
+*What I Watched Sync - your data, your device, your tracking.*

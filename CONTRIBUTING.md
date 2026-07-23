@@ -1,6 +1,6 @@
-# Contributing to Nuvio Watched Importer
+# Contributing to What I Watched Sync
 
-Thank you for your interest in improving the **Nuvio Watched Importer**! Whether you are an AI Agent, an open-source enthusiast, or a community member looking to report a bug, your help is appreciated.
+Thank you for your interest in improving **What I Watched Sync**! Whether you are an AI Agent, an open-source enthusiast, or a community member looking to report a bug, your help is appreciated.
 
 ## The Core Rule: Read `AGENTS.md`
 
